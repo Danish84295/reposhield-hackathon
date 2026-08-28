@@ -1,0 +1,10 @@
+build/
+.vscode/
+.idea/
+*.exe
+*.obj
+*.o
+*.out
+
+# Test/demo repositories
+test-project/
