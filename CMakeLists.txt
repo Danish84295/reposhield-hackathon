@@ -19,6 +19,8 @@ add_executable(reposhield
     src/security/SecurityAnalyzer.cpp
 
     src/supplychain/DependencyAnalyzer.cpp
+
+    src/graph/DependencyGraph.cpp
 )
 
 target_include_directories(reposhield PRIVATE

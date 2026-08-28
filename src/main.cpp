@@ -7,6 +7,7 @@
 #include "codelens/CodeLens.h"
 #include "security/SecurityAnalyzer.h"
 #include "supplychain/DependencyAnalyzer.h"
+#include "graph/DependencyGraph.h"
 
 namespace fs = std::filesystem;
 
@@ -181,6 +182,11 @@ int main(int argc, char* argv[])
     const std::vector<DependencyInfo> dependencies =
         dependencyAnalyzer.analyze(files);
 
+    DependencyGraph dependencyGraph;
+
+    const std::vector<DependencyEdge> dependencyEdges =
+        dependencyGraph.build(dependencies);
+
     // ------------------------------------------------------------
     // Main report
     // ------------------------------------------------------------
@@ -254,5 +260,12 @@ int main(int argc, char* argv[])
 
     printSupplyChainReport(dependencies);
 
+    std::cout
+    << "----------------------------------------\n"
+    << "          DEPENDENCY GRAPH\n"
+    << "----------------------------------------\n\n";
+
+    dependencyGraph.print(dependencyEdges);
+    
     return 0;
 }
