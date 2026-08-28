@@ -13,10 +13,12 @@ add_executable(reposhield
     src/main.cpp
 
     src/core/FileScanner.cpp
-    src/core/FileScanner.h
 
     src/codelens/CodeLens.cpp
-    src/codelens/CodeLens.h
+
+    src/security/SecurityAnalyzer.cpp
+
+    src/supplychain/DependencyAnalyzer.cpp
 )
 
 target_include_directories(reposhield PRIVATE

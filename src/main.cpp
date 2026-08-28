@@ -6,6 +6,7 @@
 #include "core/FileScanner.h"
 #include "codelens/CodeLens.h"
 #include "security/SecurityAnalyzer.h"
+#include "supplychain/DependencyAnalyzer.h"
 
 namespace fs = std::filesystem;
 
@@ -71,6 +72,50 @@ void printSecurityReport(
     }
 }
 
+void printSupplyChainReport(
+    const std::vector<DependencyInfo>& dependencies
+)
+{
+    std::cout
+        << "----------------------------------------\n"
+        << "           SUPPLY CHAIN\n"
+        << "----------------------------------------\n\n";
+
+    std::cout
+        << "Dependencies found: "
+        << dependencies.size()
+        << "\n\n";
+
+    if (dependencies.empty()) {
+        std::cout
+            << "No dependencies detected.\n\n";
+
+        return;
+    }
+
+    for (const DependencyInfo& dependency : dependencies) {
+
+        std::cout
+            << "["
+            << DependencyAnalyzer::typeToString(
+                   dependency.type
+               )
+            << "] "
+            << dependency.name
+            << "\n";
+
+        std::cout
+            << "  File: "
+            << dependency.file.string()
+            << "\n";
+
+        std::cout
+            << "  Line: "
+            << dependency.line
+            << "\n\n";
+    }
+}
+
 int main(int argc, char* argv[])
 {
     if (argc < 2) {
@@ -128,6 +173,15 @@ int main(int argc, char* argv[])
         securityAnalyzer.analyze(files);
 
     // ------------------------------------------------------------
+    // Supply chain analysis
+    // ------------------------------------------------------------
+
+    DependencyAnalyzer dependencyAnalyzer;
+
+    const std::vector<DependencyInfo> dependencies =
+        dependencyAnalyzer.analyze(files);
+
+    // ------------------------------------------------------------
     // Main report
     // ------------------------------------------------------------
 
@@ -157,6 +211,10 @@ int main(int argc, char* argv[])
             << file.size
             << " bytes)\n";
     }
+
+    // ------------------------------------------------------------
+    // Code Lens report
+    // ------------------------------------------------------------
 
     std::cout
         << "\n"
@@ -189,6 +247,12 @@ int main(int argc, char* argv[])
     // ------------------------------------------------------------
 
     printSecurityReport(securityIssues);
+
+    // ------------------------------------------------------------
+    // Supply chain report
+    // ------------------------------------------------------------
+
+    printSupplyChainReport(dependencies);
 
     return 0;
 }
