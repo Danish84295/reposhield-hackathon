@@ -8,3 +8,8 @@ build/
 
 # Test/demo repositories
 test-project/
+
+build/
+dist/
+generated/
+node_modules/

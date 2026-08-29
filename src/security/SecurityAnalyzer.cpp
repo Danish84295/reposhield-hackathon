@@ -3,6 +3,67 @@
 #include <fstream>
 #include <regex>
 
+std::string SecurityAnalyzer::sanitizeLine(
+    const std::string& line
+)
+{
+    std::string result = line;
+
+    bool inString = false;
+    bool inChar = false;
+    bool escaped = false;
+
+    for (std::size_t i = 0; i < result.size(); ++i) {
+
+        const char current = result[i];
+
+        if (escaped) {
+            result[i] = ' ';
+            escaped = false;
+            continue;
+        }
+
+        if ((inString || inChar) && current == '\\') {
+            result[i] = ' ';
+            escaped = true;
+            continue;
+        }
+
+        if (!inChar && current == '"') {
+            inString = !inString;
+            result[i] = ' ';
+            continue;
+        }
+
+        if (!inString && current == '\'') {
+            inChar = !inChar;
+            result[i] = ' ';
+            continue;
+        }
+
+        if (inString || inChar) {
+            result[i] = ' ';
+        }
+    }
+
+    // Remove single-line comments
+    for (std::size_t i = 0; i + 1 < result.size(); ++i) {
+
+        if (
+            result[i] == '/' &&
+            result[i + 1] == '/'
+        ) {
+            for (std::size_t j = i; j < result.size(); ++j) {
+                result[j] = ' ';
+            }
+
+            break;
+        }
+    }
+
+    return result;
+}
+
 std::vector<std::string> SecurityAnalyzer::readLines(
     const fs::path& path
 )
@@ -103,8 +164,10 @@ void SecurityAnalyzer::checkDangerousFunctions(
 
     for (std::size_t i = 0; i < lines.size(); ++i) {
 
+        const std::string sanitized =sanitizeLine(lines[i]);
+
         if (std::regex_search(
-                lines[i],
+                sanitized,
                 dangerousFunctions)) {
 
             issues.push_back({
@@ -131,9 +194,10 @@ void SecurityAnalyzer::checkCommandExecution(
     );
 
     for (std::size_t i = 0; i < lines.size(); ++i) {
+        const std::string sanitized =sanitizeLine(lines[i]);
 
         if (std::regex_search(
-                lines[i],
+                sanitized,
                 commandExecution)) {
 
             issues.push_back({
@@ -220,9 +284,10 @@ void SecurityAnalyzer::checkDangerousFileOperations(
     );
 
     for (std::size_t i = 0; i < lines.size(); ++i) {
+        const std::string sanitized =sanitizeLine(lines[i]);
 
         if (std::regex_search(
-                lines[i],
+                sanitized,
                 dangerousFileOperation)) {
 
             issues.push_back({
@@ -245,16 +310,39 @@ void SecurityAnalyzer::checkSqlInjection(
     std::vector<SecurityIssue>& issues
 ) const
 {
-    const std::regex sqlPattern(
-        R"((SELECT|INSERT|UPDATE|DELETE)\b.*(\+|<<|sprintf|format\s*\())",
+    const std::regex sqlKeyword(
+        R"(\b(SELECT|INSERT|UPDATE|DELETE)\b)",
+        std::regex_constants::icase
+    );
+
+    const std::regex sqlConstruction(
+        R"((\+|<<|sprintf|format\s*\())",
         std::regex_constants::icase
     );
 
     for (std::size_t i = 0; i < lines.size(); ++i) {
 
-        if (std::regex_search(
-                lines[i],
-                sqlPattern)) {
+        std::string combined = lines[i];
+
+        if (i + 1 < lines.size()) {
+            combined += " " + lines[i + 1];
+        }
+
+        if (
+            std::regex_search(combined, sqlKeyword) &&
+            std::regex_search(combined, sqlConstruction)
+        ) {
+
+            // Report only once for the multi-line SQL statement.
+            // Prefer the line containing the actual construction.
+            std::size_t reportLine = i + 1;
+
+            if (
+                std::regex_search(lines[i], sqlKeyword) &&
+                i + 1 < lines.size()
+            ) {
+                reportLine = i + 2;
+            }
 
             issues.push_back({
                 Severity::High,
@@ -264,12 +352,17 @@ void SecurityAnalyzer::checkSqlInjection(
                 "string concatenation or formatting. Use parameterized "
                 "queries or prepared statements instead.",
                 file.path,
-                i + 1
+                reportLine
             });
+
+            // Skip the next line because we already analyzed
+            // the multi-line SQL statement.
+            if (i + 1 < lines.size()) {
+                ++i;
+            }
         }
     }
 }
-
 
 void SecurityAnalyzer::checkInsecureRandom(
     const FileInfo& file,
@@ -288,8 +381,9 @@ void SecurityAnalyzer::checkInsecureRandom(
     bool seedFound = false;
 
     for (std::size_t i = 0; i < lines.size(); ++i) {
+        const std::string sanitized =sanitizeLine(lines[i]);
 
-        if (std::regex_search(lines[i], seedPattern)) {
+        if (std::regex_search(sanitized, seedPattern)) {
 
             issues.push_back({
                 Severity::Medium,
@@ -310,8 +404,9 @@ void SecurityAnalyzer::checkInsecureRandom(
     if (!seedFound) {
 
         for (std::size_t i = 0; i < lines.size(); ++i) {
+        const std::string sanitized =sanitizeLine(lines[i]);
 
-            if (std::regex_search(lines[i], randomPattern)) {
+            if (std::regex_search(sanitized, randomPattern)) {
 
                 issues.push_back({
                     Severity::Medium,

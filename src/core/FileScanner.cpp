@@ -1,22 +1,30 @@
 #include "FileScanner.h"
 
+#include <algorithm>
+#include <cctype>
 #include <system_error>
 
 std::vector<FileInfo> FileScanner::scan(
-    const fs::path& root) const
+    const fs::path& root
+) const
 {
     std::vector<FileInfo> files;
 
     std::error_code error;
 
     if (!fs::exists(root, error) ||
-        !fs::is_directory(root, error)) {
+        error ||
+        !fs::is_directory(root, error) ||
+        error) {
         return files;
     }
 
+    fs::directory_options options =
+        fs::directory_options::skip_permission_denied;
+
     fs::recursive_directory_iterator iterator(
         root,
-        fs::directory_options::skip_permission_denied,
+        options,
         error
     );
 
@@ -33,7 +41,17 @@ std::vector<FileInfo> FileScanner::scan(
         const fs::directory_entry& entry = *iterator;
         const fs::path path = entry.path();
 
+        // --------------------------------------------------------
+        // Directories
+        // --------------------------------------------------------
+
         if (entry.is_directory(error)) {
+
+            if (error) {
+                error.clear();
+                iterator.increment(error);
+                continue;
+            }
 
             if (shouldIgnoreDirectory(path)) {
                 iterator.disable_recursion_pending();
@@ -43,9 +61,15 @@ std::vector<FileInfo> FileScanner::scan(
             continue;
         }
 
+        // --------------------------------------------------------
+        // Regular source files
+        // --------------------------------------------------------
+
         if (!error &&
             entry.is_regular_file(error) &&
-            isSourceFile(path)) {
+            !error &&
+            isSourceFile(path) &&
+            !isGeneratedFile(path)) {
 
             std::error_code sizeError;
 
@@ -60,48 +84,148 @@ std::vector<FileInfo> FileScanner::scan(
             }
         }
 
+        error.clear();
         iterator.increment(error);
     }
 
     return files;
 }
 
+// ================================================================
+// Directory filtering
+// ================================================================
+
 bool FileScanner::shouldIgnoreDirectory(
-    const fs::path& path) const
+    const fs::path& path
+) const
 {
     const std::string name =
-        path.filename().string();
+        toLower(path.filename().string());
 
     return
+        // Version control
         name == ".git" ||
         name == ".svn" ||
         name == ".hg" ||
+
+        // Dependencies
         name == "node_modules" ||
+        name == "vendor" ||
+
+        // Build/output directories
         name == "build" ||
+        name == "builds" ||
         name == "dist" ||
         name == "target" ||
+        name == "out" ||
+        name == "bin" ||
+        name == "obj" ||
+
+        // IDE/cache directories
         name == ".idea" ||
-        name == ".vscode";
+        name == ".vscode" ||
+        name == ".vs" ||
+        name == ".cache" ||
+        name == "__pycache__" ||
+
+        // Common generated directories
+        name == "generated" ||
+        name == "generated-src";
 }
 
+// ================================================================
+// Source file detection
+// ================================================================
+
 bool FileScanner::isSourceFile(
-    const fs::path& path) const
+    const fs::path& path
+) const
 {
     const std::string extension =
-        path.extension().string();
+        toLower(path.extension().string());
 
     return
-        extension == ".cpp" ||
+        // C / C++
+        extension == ".c" ||
         extension == ".cc" ||
+        extension == ".cpp" ||
         extension == ".cxx" ||
         extension == ".h" ||
-        extension == ".hpp" ||
         extension == ".hh" ||
-        extension == ".c" ||
+        extension == ".hpp" ||
+        extension == ".hxx" ||
+
+        // Python
         extension == ".py" ||
+
+        // JavaScript / TypeScript
         extension == ".js" ||
         extension == ".jsx" ||
         extension == ".ts" ||
         extension == ".tsx" ||
+
+        // Java
         extension == ".java";
+}
+
+// ================================================================
+// Generated source detection
+// ================================================================
+
+bool FileScanner::isGeneratedFile(
+    const fs::path& path
+) const
+{
+    const std::string filename =
+        toLower(path.filename().string());
+
+    /*
+        Avoid scanning generated source files.
+
+        Examples:
+
+            foo.generated.cpp
+            foo.g.cpp
+            generated_file.hpp
+    */
+
+    if (filename.find(".generated.") != std::string::npos) {
+        return true;
+    }
+
+    if (filename.find(".g.cpp") != std::string::npos) {
+        return true;
+    }
+
+    if (filename.find(".g.hpp") != std::string::npos) {
+        return true;
+    }
+
+    if (filename.find(".gen.") != std::string::npos) {
+        return true;
+    }
+
+    return false;
+}
+
+// ================================================================
+// String helper
+// ================================================================
+
+std::string FileScanner::toLower(
+    std::string value
+)
+{
+    std::transform(
+        value.begin(),
+        value.end(),
+        value.begin(),
+        [](unsigned char character) {
+            return static_cast<char>(
+                std::tolower(character)
+            );
+        }
+    );
+
+    return value;
 }

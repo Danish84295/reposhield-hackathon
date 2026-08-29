@@ -24,6 +24,10 @@ struct SecurityIssue {
 
 class SecurityAnalyzer {
 private:
+    static std::string sanitizeLine(
+        const std::string& line
+    );
+
     void analyzeFile(
         const FileInfo& file,
         std::vector<SecurityIssue>& issues

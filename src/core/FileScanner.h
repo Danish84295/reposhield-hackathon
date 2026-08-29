@@ -14,9 +14,24 @@ struct FileInfo {
 
 class FileScanner {
 public:
-    std::vector<FileInfo> scan(const fs::path& root) const;
+    std::vector<FileInfo> scan(
+        const fs::path& root
+    ) const;
 
 private:
-    bool shouldIgnoreDirectory(const fs::path& path) const;
-    bool isSourceFile(const fs::path& path) const;
+    bool shouldIgnoreDirectory(
+        const fs::path& path
+    ) const;
+
+    bool isSourceFile(
+        const fs::path& path
+    ) const;
+
+    bool isGeneratedFile(
+        const fs::path& path
+    ) const;
+
+    static std::string toLower(
+        std::string value
+    );
 };
