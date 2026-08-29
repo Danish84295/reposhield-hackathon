@@ -49,6 +49,7 @@ std::string GitAnalyzer::runCommand(
         fs::absolute(repositoryPath).string();
 
 #ifdef _WIN32
+
     /*
         Convert Windows separators to forward slashes.
         Git accepts these paths correctly.
@@ -65,13 +66,16 @@ std::string GitAnalyzer::runCommand(
         "\" " +
         command +
         " 2>nul";
+
 #else
+
     const std::string gitCommand =
         "git -C \"" +
         path +
         "\" " +
         command +
         " 2>/dev/null";
+
 #endif
 
     FILE* pipe = popen(
@@ -106,6 +110,10 @@ GitStatus GitAnalyzer::analyze(
 {
     GitStatus status;
 
+    /*
+        Check whether this directory is a Git repository.
+    */
+
     const std::string repositoryCheck =
         runCommand(
             repositoryPath,
@@ -118,6 +126,10 @@ GitStatus GitAnalyzer::analyze(
 
     status.isRepository = true;
 
+    /*
+        Current branch.
+    */
+
     status.branch =
         runCommand(
             repositoryPath,
@@ -128,6 +140,10 @@ GitStatus GitAnalyzer::analyze(
         status.branch = "DETACHED HEAD";
     }
 
+    /*
+        Working tree status.
+    */
+
     const std::string porcelain =
         runCommand(
             repositoryPath,
@@ -137,6 +153,17 @@ GitStatus GitAnalyzer::analyze(
     if (!porcelain.empty()) {
         status.clean = false;
     }
+
+    /*
+        Analyze changed files.
+
+        Git porcelain format:
+
+          XY filename
+
+        X = index/staged status
+        Y = working-tree status
+    */
 
     std::istringstream statusLines(
         porcelain
@@ -149,29 +176,59 @@ GitStatus GitAnalyzer::analyze(
         line
     )) {
 
-        if (line.size() < 2) {
+        if (line.size() < 3) {
             continue;
         }
 
         const char indexStatus = line[0];
         const char workTreeStatus = line[1];
 
+        /*
+            Untracked file.
+        */
+
         if (
             indexStatus == '?' &&
             workTreeStatus == '?'
         ) {
             ++status.untrackedFiles;
-            continue;
+        }
+        else {
+
+            /*
+                File has staged changes.
+            */
+
+            if (indexStatus != ' ') {
+                ++status.stagedFiles;
+            }
+
+            /*
+                File has working-tree changes.
+            */
+
+            if (workTreeStatus != ' ') {
+                ++status.modifiedFiles;
+            }
         }
 
-        if (indexStatus != ' ') {
-            ++status.stagedFiles;
-        }
+        /*
+            Store the changed file path.
+        */
 
-        if (workTreeStatus != ' ') {
-            ++status.modifiedFiles;
+        const std::string filePath =
+            trim(line.substr(3));
+
+        if (!filePath.empty()) {
+            status.changedFiles.push_back(
+                filePath
+            );
         }
     }
+
+    /*
+        Count tracked files.
+    */
 
     const std::string tracked =
         runCommand(
@@ -189,11 +246,16 @@ GitStatus GitAnalyzer::analyze(
             trackedLines,
             line
         )) {
+
             if (!line.empty()) {
                 ++status.trackedFiles;
             }
         }
     }
+
+    /*
+        Commit count.
+    */
 
     const std::string commits =
         runCommand(
@@ -211,6 +273,10 @@ GitStatus GitAnalyzer::analyze(
             status.commitCount = 0;
         }
     }
+
+    /*
+        Latest commit information.
+    */
 
     const std::string latestCommit =
         runCommand(
@@ -253,6 +319,10 @@ void GitAnalyzer::print(
         << "           GIT INTELLIGENCE\n"
         << "----------------------------------------\n\n";
 
+    /*
+        Not a Git repository.
+    */
+
     if (!status.isRepository) {
 
         std::cout
@@ -261,6 +331,10 @@ void GitAnalyzer::print(
 
         return;
     }
+
+    /*
+        Repository information.
+    */
 
     std::cout
         << "Git repository: YES\n\n";
@@ -296,9 +370,39 @@ void GitAnalyzer::print(
         << "\n";
 
     std::cout
+        << "Changed files:   "
+        << status.changedFiles.size()
+        << "\n";
+
+    std::cout
         << "Commits:         "
         << status.commitCount
         << "\n\n";
+
+    /*
+        Changed file list.
+    */
+
+    if (!status.changedFiles.empty()) {
+
+        std::cout
+            << "CHANGED FILES\n\n";
+
+        for (const std::string& file :
+             status.changedFiles) {
+
+            std::cout
+                << "  "
+                << file
+                << "\n";
+        }
+
+        std::cout << "\n";
+    }
+
+    /*
+        Latest commit.
+    */
 
     if (!status.latestCommitHash.empty()) {
 

@@ -19,6 +19,8 @@ struct GitStatus {
 
     std::string latestCommitHash;
     std::string latestCommitMessage;
+
+    std::vector<std::string> changedFiles;
 };
 
 class GitAnalyzer {
