@@ -199,6 +199,23 @@ int main(int argc, char* argv[])
     }
 
     const fs::path repositoryPath = argv[2];
+    if (!fs::exists(repositoryPath)) {
+    std::cerr
+        << "Error: repository path does not exist: "
+        << repositoryPath
+        << "\n";
+
+    return 1;
+}
+
+if (!fs::is_directory(repositoryPath)) {
+    std::cerr
+        << "Error: repository path is not a directory: "
+        << repositoryPath
+        << "\n";
+
+    return 1;
+}
     bool exportJson = false;
     fs::path jsonOutputPath;
 
