@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "core/FileScanner.h"
+#include "core/RepositoryStats.h"
 #include "codelens/CodeLens.h"
 #include "security/SecurityAnalyzer.h"
 #include "supplychain/DependencyAnalyzer.h"
@@ -256,6 +257,17 @@ if (!fs::is_directory(repositoryPath)) {
     const std::vector<FileInfo> files =
         scanner.scan(repositoryPath);
 
+
+
+    // ------------------------------------------------------------
+    // Repository statistics
+    // ------------------------------------------------------------
+
+    RepositoryStatsAnalyzer repositoryStatsAnalyzer;
+
+    const RepositoryStats repositoryStats =
+        repositoryStatsAnalyzer.analyze(files);
+
     // ------------------------------------------------------------
     // Code analysis
     // ------------------------------------------------------------
@@ -355,6 +367,72 @@ if (!fs::is_directory(repositoryPath)) {
             << file.size
             << " bytes)\n";
     }
+
+    // ------------------------------------------------------------
+// Repository statistics report
+// ------------------------------------------------------------
+
+std::cout
+    << "\n"
+    << "----------------------------------------\n"
+    << "          REPOSITORY STATISTICS\n"
+    << "----------------------------------------\n\n";
+
+std::cout
+    << "Files:          "
+    << repositoryStats.totalFiles
+    << "\n";
+
+std::cout
+    << "Source files:   "
+    << repositoryStats.sourceFiles
+    << "\n";
+
+std::cout
+    << "Header files:   "
+    << repositoryStats.headerFiles
+    << "\n";
+
+std::cout
+    << "Total size:     "
+    << repositoryStats.totalBytes
+    << " bytes\n";
+
+std::cout
+    << "Total lines:    "
+    << repositoryStats.totalLines
+    << "\n\n";
+
+std::cout
+    << "LANGUAGES\n\n";
+
+for (const LanguageStats& language :
+     repositoryStats.languages) {
+
+    const double percentage =
+        repositoryStats.totalFiles == 0
+            ? 0.0
+            : (
+                static_cast<double>(language.files) *
+                100.0 /
+                static_cast<double>(
+                    repositoryStats.totalFiles
+                )
+              );
+
+    std::cout
+        << "  "
+        << RepositoryStatsAnalyzer::languageToString(
+               language.language
+           )
+        << "  "
+        << language.files
+        << " files ("
+        << percentage
+        << "%), "
+        << language.lines
+        << " lines\n";
+}
 
     // ------------------------------------------------------------
     // Code Lens report
