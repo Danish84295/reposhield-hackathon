@@ -9,6 +9,7 @@
 #include "supplychain/DependencyAnalyzer.h"
 #include "graph/DependencyGraph.h"
 #include "risk/RiskScorer.h"
+#include "reporting/HealthReport.h"
 
 namespace fs = std::filesystem;
 
@@ -179,6 +180,7 @@ int main(int argc, char* argv[])
     const RiskSummary riskSummary =
         riskScorer.calculate(securityIssues);
 
+   
     // ------------------------------------------------------------
     // Supply chain analysis
     // ------------------------------------------------------------
@@ -192,6 +194,22 @@ int main(int argc, char* argv[])
 
     const std::vector<DependencyEdge> dependencyEdges =
         dependencyGraph.build(dependencies);
+
+
+    // ------------------------------------------------------------
+    // Health report
+    // ------------------------------------------------------------
+
+    HealthReportGenerator healthReportGenerator;
+
+    const HealthReport healthReport =
+        healthReportGenerator.generate(
+            files.size(),
+            codeResult,
+            securityIssues,
+            dependencies,
+            riskSummary
+        );
 
     // ------------------------------------------------------------
     // Main report
@@ -261,6 +279,7 @@ int main(int argc, char* argv[])
     printSecurityReport(securityIssues);
     riskScorer.print(riskSummary);
 
+
     // ------------------------------------------------------------
     // Supply chain report
     // ------------------------------------------------------------
@@ -273,6 +292,12 @@ int main(int argc, char* argv[])
     << "----------------------------------------\n\n";
 
     dependencyGraph.print(dependencyEdges);
+
+
+    healthReportGenerator.print(
+        healthReport,
+        securityIssues
+    );
     
     return 0;
 }
