@@ -22,7 +22,9 @@ void printUsage()
         << "RepoShield - Zero-Dependency Repository Intelligence\n\n"
         << "Usage:\n"
         << "  reposhield analyze <path>\n"
-        << "  reposhield analyze <path> --json <output.json>\n";
+        << "  reposhield analyze <path> --json <output.json>\n"
+        << "  reposhield fix <path>\n"
+        << "  reposhield fix <path> --dry-run\n";
 }
 
 void printSecurityReport(
@@ -172,8 +174,64 @@ void printRemediationReport(
     }
 }
 
+void printFixReport(
+    const std::vector<FixResult>& results,
+    bool dryRun
+)
+{
+    std::cout
+        << "----------------------------------------\n"
+        << "             REMEDIATION\n"
+        << "----------------------------------------\n\n";
+
+    if (dryRun) {
+        std::cout
+            << "Mode: DRY RUN\n"
+            << "No source files will be modified.\n\n";
+    }
+    else {
+        std::cout
+            << "Mode: APPLY FIXES\n\n";
+    }
+
+    if (results.empty()) {
+        std::cout
+            << "No security issues found.\n";
+
+        return;
+    }
+
+    for (const FixResult& result : results) {
+
+        std::cout
+            << "["
+            << result.ruleId
+            << "] "
+            << result.file.string()
+            << ":"
+            << result.line
+            << "\n";
+
+        std::cout
+            << "  "
+            << result.message
+            << "\n";
+
+        std::cout
+            << "  Status: "
+            << (result.applied
+                ? "APPLIED"
+                : "NOT APPLIED")
+            << "\n\n";
+    }
+}
+
 int main(int argc, char* argv[])
 {
+    // ------------------------------------------------------------
+    // Argument validation
+    // ------------------------------------------------------------
+
     if (argc < 2) {
         printUsage();
         return 1;
@@ -181,7 +239,8 @@ int main(int argc, char* argv[])
 
     const std::string command = argv[1];
 
-    if (command != "analyze") {
+    if (command != "analyze" && command != "fix") {
+
         std::cerr
             << "Error: unknown command '"
             << command
@@ -192,6 +251,7 @@ int main(int argc, char* argv[])
     }
 
     if (argc < 3) {
+
         std::cerr
             << "Error: repository path is required.\n\n";
 
@@ -200,33 +260,44 @@ int main(int argc, char* argv[])
     }
 
     const fs::path repositoryPath = argv[2];
+
     if (!fs::exists(repositoryPath)) {
-    std::cerr
-        << "Error: repository path does not exist: "
-        << repositoryPath
-        << "\n";
 
-    return 1;
-}
+        std::cerr
+            << "Error: repository path does not exist: "
+            << repositoryPath
+            << "\n";
 
-if (!fs::is_directory(repositoryPath)) {
-    std::cerr
-        << "Error: repository path is not a directory: "
-        << repositoryPath
-        << "\n";
+        return 1;
+    }
 
-    return 1;
-}
+    if (!fs::is_directory(repositoryPath)) {
+
+        std::cerr
+            << "Error: repository path is not a directory: "
+            << repositoryPath
+            << "\n";
+
+        return 1;
+    }
+
+    // ------------------------------------------------------------
+    // Command options
+    // ------------------------------------------------------------
+
     bool exportJson = false;
+    bool dryRun = false;
+
     fs::path jsonOutputPath;
 
     if (argc >= 4) {
 
         const std::string option = argv[3];
 
-        if (option == "--json") {
+        if (command == "analyze" && option == "--json") {
 
             if (argc < 5) {
+
                 std::cerr
                     << "Error: JSON output path is required.\n\n";
 
@@ -236,11 +307,42 @@ if (!fs::is_directory(repositoryPath)) {
 
             exportJson = true;
             jsonOutputPath = argv[4];
+
+            // Prevent accidental extra arguments.
+            if (argc > 5) {
+
+                std::cerr
+                    << "Error: unexpected argument '"
+                    << argv[5]
+                    << "'\n\n";
+
+                printUsage();
+                return 1;
+            }
+        }
+        else if (command == "fix" && option == "--dry-run") {
+
+            dryRun = true;
+
+            // Prevent accidental extra arguments.
+            if (argc > 4) {
+
+                std::cerr
+                    << "Error: unexpected argument '"
+                    << argv[4]
+                    << "'\n\n";
+
+                printUsage();
+                return 1;
+            }
         }
         else {
+
             std::cerr
                 << "Error: unknown option '"
                 << option
+                << "' for command '"
+                << command
                 << "'\n\n";
 
             printUsage();
@@ -257,7 +359,36 @@ if (!fs::is_directory(repositoryPath)) {
     const std::vector<FileInfo> files =
         scanner.scan(repositoryPath);
 
+    // ------------------------------------------------------------
+    // Security analysis
+    // ------------------------------------------------------------
 
+    SecurityAnalyzer securityAnalyzer;
+
+    const std::vector<SecurityIssue> securityIssues =
+        securityAnalyzer.analyze(files);
+
+    // ------------------------------------------------------------
+    // FIX COMMAND
+    // ------------------------------------------------------------
+
+    if (command == "fix") {
+
+        RemediationEngine remediationEngine;
+
+        const std::vector<FixResult> results =
+            remediationEngine.fix(
+                securityIssues,
+                dryRun
+            );
+
+        printFixReport(
+            results,
+            dryRun
+        );
+
+        return 0;
+    }
 
     // ------------------------------------------------------------
     // Repository statistics
@@ -276,15 +407,6 @@ if (!fs::is_directory(repositoryPath)) {
 
     const CodeLensResult codeResult =
         codeLens.analyze(files);
-
-    // ------------------------------------------------------------
-    // Security analysis
-    // ------------------------------------------------------------
-
-    SecurityAnalyzer securityAnalyzer;
-
-    const std::vector<SecurityIssue> securityIssues =
-        securityAnalyzer.analyze(files);
 
     // ------------------------------------------------------------
     // Remediation analysis
@@ -341,9 +463,8 @@ if (!fs::is_directory(repositoryPath)) {
     // Main report
     // ------------------------------------------------------------
 
-    std::cout << "\n";
-
     std::cout
+        << "\n"
         << "========================================\n"
         << "              REPOSHIELD\n"
         << "========================================\n\n";
@@ -369,70 +490,70 @@ if (!fs::is_directory(repositoryPath)) {
     }
 
     // ------------------------------------------------------------
-// Repository statistics report
-// ------------------------------------------------------------
-
-std::cout
-    << "\n"
-    << "----------------------------------------\n"
-    << "          REPOSITORY STATISTICS\n"
-    << "----------------------------------------\n\n";
-
-std::cout
-    << "Files:          "
-    << repositoryStats.totalFiles
-    << "\n";
-
-std::cout
-    << "Source files:   "
-    << repositoryStats.sourceFiles
-    << "\n";
-
-std::cout
-    << "Header files:   "
-    << repositoryStats.headerFiles
-    << "\n";
-
-std::cout
-    << "Total size:     "
-    << repositoryStats.totalBytes
-    << " bytes\n";
-
-std::cout
-    << "Total lines:    "
-    << repositoryStats.totalLines
-    << "\n\n";
-
-std::cout
-    << "LANGUAGES\n\n";
-
-for (const LanguageStats& language :
-     repositoryStats.languages) {
-
-    const double percentage =
-        repositoryStats.totalFiles == 0
-            ? 0.0
-            : (
-                static_cast<double>(language.files) *
-                100.0 /
-                static_cast<double>(
-                    repositoryStats.totalFiles
-                )
-              );
+    // Repository statistics report
+    // ------------------------------------------------------------
 
     std::cout
-        << "  "
-        << RepositoryStatsAnalyzer::languageToString(
-               language.language
-           )
-        << "  "
-        << language.files
-        << " files ("
-        << percentage
-        << "%), "
-        << language.lines
-        << " lines\n";
-}
+        << "\n"
+        << "----------------------------------------\n"
+        << "          REPOSITORY STATISTICS\n"
+        << "----------------------------------------\n\n";
+
+    std::cout
+        << "Files:          "
+        << repositoryStats.totalFiles
+        << "\n";
+
+    std::cout
+        << "Source files:   "
+        << repositoryStats.sourceFiles
+        << "\n";
+
+    std::cout
+        << "Header files:   "
+        << repositoryStats.headerFiles
+        << "\n";
+
+    std::cout
+        << "Total size:     "
+        << repositoryStats.totalBytes
+        << " bytes\n";
+
+    std::cout
+        << "Total lines:    "
+        << repositoryStats.totalLines
+        << "\n\n";
+
+    std::cout
+        << "LANGUAGES\n\n";
+
+    for (const LanguageStats& language :
+         repositoryStats.languages) {
+
+        const double percentage =
+            repositoryStats.totalFiles == 0
+                ? 0.0
+                : (
+                    static_cast<double>(language.files) *
+                    100.0 /
+                    static_cast<double>(
+                        repositoryStats.totalFiles
+                    )
+                  );
+
+        std::cout
+            << "  "
+            << RepositoryStatsAnalyzer::languageToString(
+                   language.language
+               )
+            << "  "
+            << language.files
+            << " files ("
+            << percentage
+            << "%), "
+            << language.lines
+            << " lines\n";
+    }
 
     // ------------------------------------------------------------
     // Code Lens report
@@ -444,112 +565,118 @@ for (const LanguageStats& language :
         << "              CODE LENS\n"
         << "----------------------------------------\n\n";
 
-std::cout
-    << "Includes:  "
-    << codeResult.includeCount
-    << "\n";
-
-std::cout
-    << "Functions: "
-    << codeResult.functionCount
-    << "\n";
-
-std::cout
-    << "Classes:   "
-    << codeResult.classCount
-    << "\n";
-
-std::cout
-    << "Structs:   "
-    << codeResult.structCount
-    << "\n\n";
-
-if (!codeResult.functions.empty()) {
+    std::cout
+        << "Includes:  "
+        << codeResult.includeCount
+        << "\n";
 
     std::cout
-        << "FUNCTIONS\n\n";
-
-    for (const FunctionInfo& function :
-         codeResult.functions) {
-
-        std::cout
-            << "  "
-            << function.name
-            << "\n"
-            << "    File: "
-            << function.file.string()
-            << "\n"
-            << "    Line: "
-            << function.line
-            << "\n"
-            << "    Lines: "
-            << function.lines
-            << "\n\n";
-    }
-}
-
-if (!codeResult.classes.empty()) {
+        << "Functions: "
+        << codeResult.functionCount
+        << "\n";
 
     std::cout
-        << "CLASSES\n\n";
-
-    for (const ClassInfo& classInfo :
-         codeResult.classes) {
-
-        std::cout
-            << "  "
-            << classInfo.name
-            << "\n"
-            << "    File: "
-            << classInfo.file.string()
-            << "\n"
-            << "    Line: "
-            << classInfo.line
-            << "\n"
-            << "    Methods: "
-            << classInfo.methods
-            << "\n\n";
-    }
-}
-
-if (!codeResult.structs.empty()) {
+        << "Classes:   "
+        << codeResult.classCount
+        << "\n";
 
     std::cout
-        << "STRUCTS\n\n";
+        << "Structs:   "
+        << codeResult.structCount
+        << "\n\n";
 
-    for (const StructInfo& structInfo :
-         codeResult.structs) {
+    if (!codeResult.functions.empty()) {
 
         std::cout
-            << "  "
-            << structInfo.name
-            << "\n"
-            << "    File: "
-            << structInfo.file.string()
-            << "\n"
-            << "    Line: "
-            << structInfo.line
-            << "\n\n";
+            << "FUNCTIONS\n\n";
+
+        for (const FunctionInfo& function :
+             codeResult.functions) {
+
+            std::cout
+                << "  "
+                << function.name
+                << "\n"
+                << "    File: "
+                << function.file.string()
+                << "\n"
+                << "    Line: "
+                << function.line
+                << "\n"
+                << "    Lines: "
+                << function.lines
+                << "\n\n";
+        }
     }
-}
+
+    if (!codeResult.classes.empty()) {
+
+        std::cout
+            << "CLASSES\n\n";
+
+        for (const ClassInfo& classInfo :
+             codeResult.classes) {
+
+            std::cout
+                << "  "
+                << classInfo.name
+                << "\n"
+                << "    File: "
+                << classInfo.file.string()
+                << "\n"
+                << "    Line: "
+                << classInfo.line
+                << "\n"
+                << "    Methods: "
+                << classInfo.methods
+                << "\n\n";
+        }
+    }
+
+    if (!codeResult.structs.empty()) {
+
+        std::cout
+            << "STRUCTS\n\n";
+
+        for (const StructInfo& structInfo :
+             codeResult.structs) {
+
+            std::cout
+                << "  "
+                << structInfo.name
+                << "\n"
+                << "    File: "
+                << structInfo.file.string()
+                << "\n"
+                << "    Line: "
+                << structInfo.line
+                << "\n\n";
+        }
+    }
 
     // ------------------------------------------------------------
     // Security report
     // ------------------------------------------------------------
 
-    printSecurityReport(securityIssues);
+    printSecurityReport(
+        securityIssues
+    );
 
     // ------------------------------------------------------------
     // Risk report
     // ------------------------------------------------------------
 
-    riskScorer.print(riskSummary);
+    riskScorer.print(
+        riskSummary
+    );
 
     // ------------------------------------------------------------
     // Supply chain report
     // ------------------------------------------------------------
 
-    printSupplyChainReport(dependencies);
+    printSupplyChainReport(
+        dependencies
+    );
 
     // ------------------------------------------------------------
     // Dependency graph report
@@ -560,7 +687,9 @@ if (!codeResult.structs.empty()) {
         << "          DEPENDENCY GRAPH\n"
         << "----------------------------------------\n\n";
 
-    dependencyGraph.print(dependencyEdges);
+    dependencyGraph.print(
+        dependencyEdges
+    );
 
     // ------------------------------------------------------------
     // Remediation report
@@ -579,6 +708,10 @@ if (!codeResult.structs.empty()) {
         healthReport,
         securityIssues
     );
+
+    // ------------------------------------------------------------
+    // JSON export
+    // ------------------------------------------------------------
 
     if (exportJson) {
 

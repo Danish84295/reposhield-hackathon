@@ -270,21 +270,26 @@ void SecurityAnalyzer::checkSqlInjection(
     }
 }
 
+
 void SecurityAnalyzer::checkInsecureRandom(
     const FileInfo& file,
     const std::vector<std::string>& lines,
     std::vector<SecurityIssue>& issues
 ) const
 {
-    const std::regex insecureRandom(
-        R"(\b(srand|rand)\s*\()"
+    const std::regex seedPattern(
+        R"(\bsrand\s*\()"
     );
+
+    const std::regex randomPattern(
+        R"(\brand\s*\()"
+    );
+
+    bool seedFound = false;
 
     for (std::size_t i = 0; i < lines.size(); ++i) {
 
-        if (std::regex_search(
-                lines[i],
-                insecureRandom)) {
+        if (std::regex_search(lines[i], seedPattern)) {
 
             issues.push_back({
                 Severity::Medium,
@@ -296,6 +301,29 @@ void SecurityAnalyzer::checkInsecureRandom(
                 file.path,
                 i + 1
             });
+
+            seedFound = true;
+        }
+    }
+
+    // If srand() was not found, report rand() usage.
+    if (!seedFound) {
+
+        for (std::size_t i = 0; i < lines.size(); ++i) {
+
+            if (std::regex_search(lines[i], randomPattern)) {
+
+                issues.push_back({
+                    Severity::Medium,
+                    "RS007",
+                    "Insecure random number generation",
+                    "The rand()/srand() pseudo-random generator is not "
+                    "suitable for security-sensitive values. Use a "
+                    "cryptographically secure random generator instead.",
+                    file.path,
+                    i + 1
+                });
+            }
         }
     }
 }
