@@ -10,6 +10,7 @@
 #include "graph/DependencyGraph.h"
 #include "risk/RiskScorer.h"
 #include "reporting/HealthReport.h"
+#include "remediation/RemediationEngine.h"
 
 namespace fs = std::filesystem;
 
@@ -119,6 +120,55 @@ void printSupplyChainReport(
     }
 }
 
+void printRemediationReport(
+    const std::vector<SecurityIssue>& issues,
+    const std::vector<Remediation>& remediations
+)
+{
+    std::cout
+        << "----------------------------------------\n"
+        << "         REMEDIATION GUIDANCE\n"
+        << "----------------------------------------\n\n";
+
+    if (issues.empty()) {
+        std::cout
+            << "No remediation actions required.\n\n";
+
+        return;
+    }
+
+    for (std::size_t i = 0;
+         i < issues.size() && i < remediations.size();
+         ++i) {
+
+        const SecurityIssue& issue = issues[i];
+        const Remediation& remediation = remediations[i];
+
+        std::cout
+            << "["
+            << remediation.ruleId
+            << "] "
+            << issue.title
+            << "\n";
+
+        std::cout
+            << "  File: "
+            << issue.file.string()
+            << "\n";
+
+        std::cout
+            << "  Line: "
+            << issue.line
+            << "\n";
+
+        std::cout
+            << "  Recommendation:\n"
+            << "    "
+            << remediation.recommendation
+            << "\n\n";
+    }
+}
+
 int main(int argc, char* argv[])
 {
     if (argc < 2) {
@@ -175,12 +225,24 @@ int main(int argc, char* argv[])
     const std::vector<SecurityIssue> securityIssues =
         securityAnalyzer.analyze(files);
 
+    // ------------------------------------------------------------
+    // Remediation analysis
+    // ------------------------------------------------------------
+
+    RemediationEngine remediationEngine;
+
+    const std::vector<Remediation> remediations =
+        remediationEngine.generate(securityIssues);
+
+    // ------------------------------------------------------------
+    // Risk analysis
+    // ------------------------------------------------------------
+
     RiskScorer riskScorer;
 
     const RiskSummary riskSummary =
         riskScorer.calculate(securityIssues);
 
-   
     // ------------------------------------------------------------
     // Supply chain analysis
     // ------------------------------------------------------------
@@ -190,11 +252,14 @@ int main(int argc, char* argv[])
     const std::vector<DependencyInfo> dependencies =
         dependencyAnalyzer.analyze(files);
 
+    // ------------------------------------------------------------
+    // Dependency graph
+    // ------------------------------------------------------------
+
     DependencyGraph dependencyGraph;
 
     const std::vector<DependencyEdge> dependencyEdges =
         dependencyGraph.build(dependencies);
-
 
     // ------------------------------------------------------------
     // Health report
@@ -277,8 +342,12 @@ int main(int argc, char* argv[])
     // ------------------------------------------------------------
 
     printSecurityReport(securityIssues);
-    riskScorer.print(riskSummary);
 
+    // ------------------------------------------------------------
+    // Risk report
+    // ------------------------------------------------------------
+
+    riskScorer.print(riskSummary);
 
     // ------------------------------------------------------------
     // Supply chain report
@@ -286,18 +355,34 @@ int main(int argc, char* argv[])
 
     printSupplyChainReport(dependencies);
 
+    // ------------------------------------------------------------
+    // Dependency graph report
+    // ------------------------------------------------------------
+
     std::cout
-    << "----------------------------------------\n"
-    << "          DEPENDENCY GRAPH\n"
-    << "----------------------------------------\n\n";
+        << "----------------------------------------\n"
+        << "          DEPENDENCY GRAPH\n"
+        << "----------------------------------------\n\n";
 
     dependencyGraph.print(dependencyEdges);
 
+    // ------------------------------------------------------------
+    // Remediation report
+    // ------------------------------------------------------------
+
+    printRemediationReport(
+        securityIssues,
+        remediations
+    );
+
+    // ------------------------------------------------------------
+    // Final health report
+    // ------------------------------------------------------------
 
     healthReportGenerator.print(
         healthReport,
         securityIssues
     );
-    
+
     return 0;
 }
