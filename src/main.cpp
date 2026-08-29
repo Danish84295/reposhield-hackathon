@@ -11,6 +11,7 @@
 #include "risk/RiskScorer.h"
 #include "reporting/HealthReport.h"
 #include "remediation/RemediationEngine.h"
+#include "reporting/JsonReport.h"
 
 namespace fs = std::filesystem;
 
@@ -19,7 +20,8 @@ void printUsage()
     std::cout
         << "RepoShield - Zero-Dependency Repository Intelligence\n\n"
         << "Usage:\n"
-        << "  reposhield analyze <path>\n";
+        << "  reposhield analyze <path>\n"
+        << "  reposhield analyze <path> --json <output.json>\n";
 }
 
 void printSecurityReport(
@@ -197,6 +199,36 @@ int main(int argc, char* argv[])
     }
 
     const fs::path repositoryPath = argv[2];
+    bool exportJson = false;
+    fs::path jsonOutputPath;
+
+    if (argc >= 4) {
+
+        const std::string option = argv[3];
+
+        if (option == "--json") {
+
+            if (argc < 5) {
+                std::cerr
+                    << "Error: JSON output path is required.\n\n";
+
+                printUsage();
+                return 1;
+            }
+
+            exportJson = true;
+            jsonOutputPath = argv[4];
+        }
+        else {
+            std::cerr
+                << "Error: unknown option '"
+                << option
+                << "'\n\n";
+
+            printUsage();
+            return 1;
+        }
+    }
 
     // ------------------------------------------------------------
     // Repository scanning
@@ -383,6 +415,38 @@ int main(int argc, char* argv[])
         healthReport,
         securityIssues
     );
+
+    if (exportJson) {
+
+        JsonReportGenerator jsonReportGenerator;
+
+        const bool success =
+            jsonReportGenerator.write(
+                jsonOutputPath,
+                repositoryPath,
+                files,
+                codeResult,
+                securityIssues,
+                dependencies,
+                riskSummary,
+                remediations
+            );
+
+        if (!success) {
+
+            std::cerr
+                << "Error: could not write JSON report to "
+                << jsonOutputPath.string()
+                << "\n";
+
+            return 1;
+        }
+
+        std::cout
+            << "JSON report written to: "
+            << jsonOutputPath.string()
+            << "\n\n";
+    }
 
     return 0;
 }
