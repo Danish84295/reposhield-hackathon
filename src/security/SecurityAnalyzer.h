@@ -47,6 +47,30 @@ private:
         std::vector<SecurityIssue>& issues
     ) const;
 
+        void checkWeakCryptography(
+        const FileInfo& file,
+        const std::vector<std::string>& lines,
+        std::vector<SecurityIssue>& issues
+    ) const;
+
+    void checkDangerousFileOperations(
+        const FileInfo& file,
+        const std::vector<std::string>& lines,
+        std::vector<SecurityIssue>& issues
+    ) const;
+
+    void checkSqlInjection(
+        const FileInfo& file,
+        const std::vector<std::string>& lines,
+        std::vector<SecurityIssue>& issues
+    ) const;
+
+    void checkInsecureRandom(
+        const FileInfo& file,
+        const std::vector<std::string>& lines,
+        std::vector<SecurityIssue>& issues
+    ) const;
+
     static std::vector<std::string> readLines(
         const fs::path& path
     );

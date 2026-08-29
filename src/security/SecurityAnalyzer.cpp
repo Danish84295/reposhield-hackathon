@@ -66,6 +66,29 @@ void SecurityAnalyzer::analyzeFile(
         lines,
         issues
     );
+        checkWeakCryptography(
+        file,
+        lines,
+        issues
+    );
+
+    checkDangerousFileOperations(
+        file,
+        lines,
+        issues
+    );
+
+    checkSqlInjection(
+        file,
+        lines,
+        issues
+    );
+
+    checkInsecureRandom(
+        file,
+        lines,
+        issues
+    );
 }
 
 void SecurityAnalyzer::checkDangerousFunctions(
@@ -149,6 +172,127 @@ void SecurityAnalyzer::checkHardcodedSecrets(
                 "Possible hardcoded secret",
                 "A credential-like value appears to be stored directly "
                 "in source code.",
+                file.path,
+                i + 1
+            });
+        }
+    }
+}
+
+void SecurityAnalyzer::checkWeakCryptography(
+    const FileInfo& file,
+    const std::vector<std::string>& lines,
+    std::vector<SecurityIssue>& issues
+) const
+{
+    const std::regex weakCrypto(
+        R"(\b(MD5|MD4|SHA1|SHA-1|DES|RC4)\b)",
+        std::regex_constants::icase
+    );
+
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+
+        if (std::regex_search(lines[i], weakCrypto)) {
+
+            issues.push_back({
+                Severity::High,
+                "RS004",
+                "Weak cryptographic algorithm",
+                "Use of a weak or deprecated cryptographic algorithm "
+                "can make sensitive data vulnerable to attacks. "
+                "Prefer modern algorithms such as SHA-256 or stronger "
+                "authenticated encryption where appropriate.",
+                file.path,
+                i + 1
+            });
+        }
+    }
+}
+
+void SecurityAnalyzer::checkDangerousFileOperations(
+    const FileInfo& file,
+    const std::vector<std::string>& lines,
+    std::vector<SecurityIssue>& issues
+) const
+{
+    const std::regex dangerousFileOperation(
+        R"(\b(fopen|open|remove|rename)\s*\()"
+    );
+
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+
+        if (std::regex_search(
+                lines[i],
+                dangerousFileOperation)) {
+
+            issues.push_back({
+                Severity::Medium,
+                "RS005",
+                "Potentially dangerous file operation",
+                "File operations can introduce security risks when "
+                "paths or filenames are controlled by untrusted input. "
+                "Validate paths and restrict access to expected locations.",
+                file.path,
+                i + 1
+            });
+        }
+    }
+}
+
+void SecurityAnalyzer::checkSqlInjection(
+    const FileInfo& file,
+    const std::vector<std::string>& lines,
+    std::vector<SecurityIssue>& issues
+) const
+{
+    const std::regex sqlPattern(
+        R"((SELECT|INSERT|UPDATE|DELETE)\b.*(\+|<<|sprintf|format\s*\())",
+        std::regex_constants::icase
+    );
+
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+
+        if (std::regex_search(
+                lines[i],
+                sqlPattern)) {
+
+            issues.push_back({
+                Severity::High,
+                "RS006",
+                "Potential SQL injection",
+                "SQL statements appear to be constructed using "
+                "string concatenation or formatting. Use parameterized "
+                "queries or prepared statements instead.",
+                file.path,
+                i + 1
+            });
+        }
+    }
+}
+
+void SecurityAnalyzer::checkInsecureRandom(
+    const FileInfo& file,
+    const std::vector<std::string>& lines,
+    std::vector<SecurityIssue>& issues
+) const
+{
+    const std::regex insecureRandom(
+        R"(\b(srand|rand)\s*\()"
+    );
+
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+
+        if (std::regex_search(
+                lines[i],
+                insecureRandom)) {
+
+            issues.push_back({
+                Severity::Medium,
+                "RS007",
+                "Insecure random number generation",
+                "The rand()/srand() pseudo-random generator is not "
+                "suitable for security-sensitive values. Use a "
+                "cryptographically secure random generator instead.",
                 file.path,
                 i + 1
             });
