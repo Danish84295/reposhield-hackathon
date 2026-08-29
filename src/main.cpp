@@ -8,6 +8,7 @@
 #include "security/SecurityAnalyzer.h"
 #include "supplychain/DependencyAnalyzer.h"
 #include "graph/DependencyGraph.h"
+#include "risk/RiskScorer.h"
 
 namespace fs = std::filesystem;
 
@@ -173,6 +174,11 @@ int main(int argc, char* argv[])
     const std::vector<SecurityIssue> securityIssues =
         securityAnalyzer.analyze(files);
 
+    RiskScorer riskScorer;
+
+    const RiskSummary riskSummary =
+        riskScorer.calculate(securityIssues);
+
     // ------------------------------------------------------------
     // Supply chain analysis
     // ------------------------------------------------------------
@@ -253,6 +259,7 @@ int main(int argc, char* argv[])
     // ------------------------------------------------------------
 
     printSecurityReport(securityIssues);
+    riskScorer.print(riskSummary);
 
     // ------------------------------------------------------------
     // Supply chain report

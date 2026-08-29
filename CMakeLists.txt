@@ -11,16 +11,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(reposhield
     src/main.cpp
-
     src/core/FileScanner.cpp
-
     src/codelens/CodeLens.cpp
-
     src/security/SecurityAnalyzer.cpp
-
     src/supplychain/DependencyAnalyzer.cpp
-
     src/graph/DependencyGraph.cpp
+    src/risk/RiskScorer.cpp
 )
 
 target_include_directories(reposhield PRIVATE
