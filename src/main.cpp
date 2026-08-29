@@ -444,25 +444,94 @@ for (const LanguageStats& language :
         << "              CODE LENS\n"
         << "----------------------------------------\n\n";
 
-    std::cout
-        << "Includes:  "
-        << codeResult.includeCount
-        << "\n";
+std::cout
+    << "Includes:  "
+    << codeResult.includeCount
+    << "\n";
+
+std::cout
+    << "Functions: "
+    << codeResult.functionCount
+    << "\n";
+
+std::cout
+    << "Classes:   "
+    << codeResult.classCount
+    << "\n";
+
+std::cout
+    << "Structs:   "
+    << codeResult.structCount
+    << "\n\n";
+
+if (!codeResult.functions.empty()) {
 
     std::cout
-        << "Functions: "
-        << codeResult.functionCount
-        << "\n";
+        << "FUNCTIONS\n\n";
+
+    for (const FunctionInfo& function :
+         codeResult.functions) {
+
+        std::cout
+            << "  "
+            << function.name
+            << "\n"
+            << "    File: "
+            << function.file.string()
+            << "\n"
+            << "    Line: "
+            << function.line
+            << "\n"
+            << "    Lines: "
+            << function.lines
+            << "\n\n";
+    }
+}
+
+if (!codeResult.classes.empty()) {
 
     std::cout
-        << "Classes:   "
-        << codeResult.classCount
-        << "\n";
+        << "CLASSES\n\n";
+
+    for (const ClassInfo& classInfo :
+         codeResult.classes) {
+
+        std::cout
+            << "  "
+            << classInfo.name
+            << "\n"
+            << "    File: "
+            << classInfo.file.string()
+            << "\n"
+            << "    Line: "
+            << classInfo.line
+            << "\n"
+            << "    Methods: "
+            << classInfo.methods
+            << "\n\n";
+    }
+}
+
+if (!codeResult.structs.empty()) {
 
     std::cout
-        << "Structs:   "
-        << codeResult.structCount
-        << "\n\n";
+        << "STRUCTS\n\n";
+
+    for (const StructInfo& structInfo :
+         codeResult.structs) {
+
+        std::cout
+            << "  "
+            << structInfo.name
+            << "\n"
+            << "    File: "
+            << structInfo.file.string()
+            << "\n"
+            << "    Line: "
+            << structInfo.line
+            << "\n\n";
+    }
+}
 
     // ------------------------------------------------------------
     // Security report
