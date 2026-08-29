@@ -13,6 +13,7 @@
 #include "reporting/HealthReport.h"
 #include "remediation/RemediationEngine.h"
 #include "reporting/JsonReport.h"
+#include "git/GitAnalyzer.h"
 
 namespace fs = std::filesystem;
 
@@ -24,7 +25,8 @@ void printUsage()
         << "  reposhield analyze <path>\n"
         << "  reposhield analyze <path> --json <output.json>\n"
         << "  reposhield fix <path>\n"
-        << "  reposhield fix <path> --dry-run\n";
+        << "  reposhield fix <path> --dry-run\n"
+        << "  reposhield git <path>\n";
 }
 
 void printSecurityReport(
@@ -239,7 +241,7 @@ int main(int argc, char* argv[])
 
     const std::string command = argv[1];
 
-    if (command != "analyze" && command != "fix") {
+    if (command != "analyze" && command != "fix" && command != "git") {
 
         std::cerr
             << "Error: unknown command '"
@@ -280,6 +282,32 @@ int main(int argc, char* argv[])
 
         return 1;
     }
+    // ------------------------------------------------------------
+// GIT COMMAND
+// ------------------------------------------------------------
+
+if (command == "git") {
+
+    if (argc > 3) {
+
+        std::cerr
+            << "Error: unexpected argument '"
+            << argv[3]
+            << "'\n\n";
+
+        printUsage();
+        return 1;
+    }
+
+    GitAnalyzer gitAnalyzer;
+
+    const GitStatus gitStatus =
+        gitAnalyzer.analyze(repositoryPath);
+
+    gitAnalyzer.print(gitStatus);
+
+    return 0;
+}
 
     // ------------------------------------------------------------
     // Command options
