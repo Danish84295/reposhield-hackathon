@@ -315,34 +315,28 @@ void SecurityAnalyzer::checkSqlInjection(
         std::regex_constants::icase
     );
 
-    const std::regex sqlConstruction(
-        R"((\+|<<|sprintf|format\s*\())",
+    const std::regex concatenation(
+        R"((\+|<<|sprintf\s*\(|format\s*\())",
         std::regex_constants::icase
     );
 
+    bool sqlStatementActive = false;
+
     for (std::size_t i = 0; i < lines.size(); ++i) {
 
-        std::string combined = lines[i];
+        const std::string& line = lines[i];
 
-        if (i + 1 < lines.size()) {
-            combined += " " + lines[i + 1];
+        // Detect SQL keyword in the original source line.
+        if (!sqlStatementActive &&
+            std::regex_search(line, sqlKeyword)) {
+
+            sqlStatementActive = true;
         }
 
-        if (
-            std::regex_search(combined, sqlKeyword) &&
-            std::regex_search(combined, sqlConstruction)
-        ) {
-
-            // Report only once for the multi-line SQL statement.
-            // Prefer the line containing the actual construction.
-            std::size_t reportLine = i + 1;
-
-            if (
-                std::regex_search(lines[i], sqlKeyword) &&
-                i + 1 < lines.size()
-            ) {
-                reportLine = i + 2;
-            }
+        // Once SQL has been detected, look for
+        // string concatenation or formatting.
+        if (sqlStatementActive &&
+            std::regex_search(line, concatenation)) {
 
             issues.push_back({
                 Severity::High,
@@ -352,14 +346,17 @@ void SecurityAnalyzer::checkSqlInjection(
                 "string concatenation or formatting. Use parameterized "
                 "queries or prepared statements instead.",
                 file.path,
-                reportLine
+                i + 1
             });
 
-            // Skip the next line because we already analyzed
-            // the multi-line SQL statement.
-            if (i + 1 < lines.size()) {
-                ++i;
-            }
+            sqlStatementActive = false;
+        }
+
+        // Stop tracking once the statement ends.
+        if (sqlStatementActive &&
+            line.find(';') != std::string::npos) {
+
+            sqlStatementActive = false;
         }
     }
 }
