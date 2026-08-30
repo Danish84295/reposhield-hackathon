@@ -24,13 +24,27 @@ void printUsage()
     std::cout
         << "RepoShield - Zero-Dependency Repository Intelligence\n\n"
         << "Usage:\n"
-        << "  reposhield analyze <path>\n"
-        << "  reposhield analyze <path> --json <output.json>\n"
-        << "  reposhield analyze <path> --sarif <output.sarif>\n"
-        << "  reposhield analyze <path> --json <output.json> --sarif <output.sarif>\n"
-        << "  reposhield fix <path>\n"
-        << "  reposhield fix <path> --dry-run\n"
-        << "  reposhield git <path>\n";
+        << "  reposhield analyze <path> [options]\n"
+        << "  reposhield fix <path> [options]\n"
+        << "  reposhield git <path>\n\n"
+        << "Commands:\n"
+        << "  analyze    Analyze repository security, health, and dependencies\n"
+        << "  fix        Apply supported automatic remediation\n"
+        << "  git        Show Git repository intelligence\n\n"
+        << "Analyze options:\n"
+        << "  --json <file>       Generate a JSON report\n"
+        << "  --sarif <file>      Generate a SARIF report\n\n"
+        << "Fix options:\n"
+        << "  --dry-run            Preview remediation without modifying files\n\n"
+        << "General options:\n"
+        << "  --help               Show this help message\n\n"
+        << "Examples:\n"
+        << "  reposhield analyze ./my-project\n"
+        << "  reposhield analyze ./my-project --json report.json\n"
+        << "  reposhield analyze ./my-project --sarif report.sarif\n"
+        << "  reposhield fix ./demo-target\n"
+        << "  reposhield fix ./demo-target --dry-run\n"
+        << "  reposhield git ./my-project\n";
 }
 
 void printSecurityReport(
@@ -245,6 +259,12 @@ int main(int argc, char* argv[])
 
     const std::string command = argv[1];
 
+    // Global help
+    if (command == "--help" || command == "-h" || command == "help") {
+        printUsage();
+        return 0;
+    }
+
     if (command != "analyze" && command != "fix" && command != "git") {
 
         std::cerr
@@ -263,6 +283,13 @@ int main(int argc, char* argv[])
 
         printUsage();
         return 1;
+    }
+
+    // Command-specific help
+    if (std::string(argv[2]) == "--help" ||
+        std::string(argv[2]) == "-h") {
+        printUsage();
+        return 0;
     }
 
     const fs::path repositoryPath = argv[2];
