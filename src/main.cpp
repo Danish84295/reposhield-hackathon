@@ -286,30 +286,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+        // ------------------------------------------------------------
+    // GIT COMMAND
     // ------------------------------------------------------------
-    // Security policy
-    // ------------------------------------------------------------
-
-    SecurityConfig securityConfig;
-
-    const bool policyLoaded =
-        securityConfig.load(repositoryPath);
-
-    if (!policyLoaded) {
-
-        std::cerr
-            << "Error: invalid RepoShield security policy: "
-            << securityConfig.getPolicyPath()
-            << "\n";
-
-        return 1;
-    }
-
-
-
-    // ------------------------------------------------------------
-// GIT COMMAND
-// ------------------------------------------------------------
 
 if (command == "git") {
 
@@ -333,6 +312,28 @@ if (command == "git") {
 
     return 0;
 }
+
+
+
+    // ------------------------------------------------------------
+    // Security policy
+    // ------------------------------------------------------------
+
+    SecurityConfig securityConfig;
+
+    const bool policyLoaded =
+        securityConfig.load(repositoryPath);
+
+    if (!policyLoaded) {
+
+        std::cerr
+            << "Error: invalid RepoShield security policy: "
+            << securityConfig.getPolicyPath()
+            << "\n";
+
+        return 1;
+    }
+
 
     // ------------------------------------------------------------
     // Command options
@@ -808,6 +809,7 @@ if (command == "git") {
     const GitStatus gitStatus =
         gitAnalyzer.analyze(repositoryPath);
 
+    
 
     // ------------------------------------------------------------
     // JSON export
@@ -894,6 +896,4 @@ if (policyFailed) {
 }
 
 return 0;
-
-    return 0;
 }
