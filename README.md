@@ -262,20 +262,65 @@ Git is optional. RepoShield can still analyze repositories that are not Git repo
 
 ### Remediation Guidance
 
-Security findings include actionable recommendations.
+RepoShield provides actionable remediation guidance for detected security findings.
+
+For each finding, RepoShield reports:
+
+- Rule ID
+- File
+- Line number
+- Recommendation
 
 Example:
-```
+
+```text
 [RS001] Unsafe C string function
-
-Recommendation:
-Replace unsafe C string functions such as strcpy()
-with safer alternatives such as std::string or
-a bounds-checked operation.
+  File: demo-target\vulnerable.cpp
+  Line: 30
+  Recommendation:
+    Replace unsafe C string functions such as strcpy()
+    with safer alternatives such as std::string or a
+    bounds-checked operation.
 ```
-The goal is not only to detect problems, but also to provide developers with guidance for addressing them.
+### Automatic Remediation
 
+RepoShield currently supports automatic remediation for RS001 — Unsafe C string function.
 
+The fix command can automatically replace the detected unsafe strcpy() usage with a safer implementation.
+
+Run:
+```
+./reposhield fix demo-target
+```
+To preview the changes without modifying the repository:
+```
+./reposhield fix demo-target --dry-run
+```
+After applying the fix, run the analysis again to verify the result:
+```
+./reposhield analyze demo-target
+```
+If the remediation was successful, the RS001 finding should no longer appear.
+
+- Note: Automatic remediation is currently implemented for RS001 only. Other security rules provide remediation guidance but are not automatically modified.
+
+This provides a complete workflow:
+
+#### Detect → Fix → Verify
+
+```
+./reposhield analyze demo-target
+        ↓
+      RS001
+        ↓
+./reposhield fix demo-target
+        ↓
+   RS001 fixed
+        ↓
+./reposhield analyze demo-target
+        ↓
+   RS001 removed
+```
 ---
 ### JSON Reports
 
