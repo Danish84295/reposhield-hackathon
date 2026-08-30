@@ -47,8 +47,8 @@ jobs:
 
       - name: Run RepoShield
         run: |
-          ./reposhield analyze . --json reposhield-report.json
-          ./reposhield analyze . --sarif reposhield-results.sarif
+          ./reposhield analyze demo-target --json reposhield-report.json
+          ./reposhield analyze demo-target --sarif reposhield-results.sarif
 
       - name: Display security report
         run: |
