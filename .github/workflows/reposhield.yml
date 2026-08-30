@@ -1,0 +1,80 @@
+name: RepoShield Security Scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  security-scan:
+    name: RepoShield Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++
+
+      - name: Build RepoShield
+        run: |
+          g++ -std=c++17 \
+            src/main.cpp \
+            src/core/FileScanner.cpp \
+            src/core/RepositoryStats.cpp \
+            src/codelens/CodeLens.cpp \
+            src/security/SecurityAnalyzer.cpp \
+            src/supplychain/DependencyAnalyzer.cpp \
+            src/graph/DependencyGraph.cpp \
+            src/risk/RiskScorer.cpp \
+            src/remediation/RemediationEngine.cpp \
+            src/reporting/HealthReport.cpp \
+            src/reporting/JsonReport.cpp \
+            src/git/GitAnalyzer.cpp \
+            -I src \
+            -o reposhield
+
+      - name: Run RepoShield
+        run: |
+          ./reposhield analyze . --json reposhield-report.json
+
+      - name: Display security report
+        run: |
+          cat reposhield-report.json
+
+      - name: CI Security Gate
+        run: |
+          echo "Checking RepoShield security results..."
+
+          CRITICAL=$(grep -o '"critical":[[:space:]]*[0-9]*' reposhield-report.json | grep -o '[0-9]*' | head -1)
+          HIGH=$(grep -o '"high":[[:space:]]*[0-9]*' reposhield-report.json | grep -o '[0-9]*' | head -1)
+
+          CRITICAL=${CRITICAL:-0}
+          HIGH=${HIGH:-0}
+
+          echo "Critical issues: $CRITICAL"
+          echo "High issues:     $HIGH"
+
+          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+            echo ""
+            echo "========================================"
+            echo "        SECURITY GATE FAILED"
+            echo "========================================"
+            echo ""
+            echo "RepoShield detected Critical or High severity vulnerabilities."
+            echo "Fix these issues before merging."
+            exit 1
+          fi
+
+          echo ""
+          echo "========================================"
+          echo "        SECURITY GATE PASSED"
+          echo "========================================"
+          echo ""
+          echo "No Critical or High severity vulnerabilities found."
