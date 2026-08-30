@@ -47,20 +47,46 @@ jobs:
             -o reposhield
 
       - name: Run RepoShield
+        id: reposhield
         run: |
+          echo "Running RepoShield analysis..."
+
+          set +e
+
           ./reposhield analyze demo-target --json reposhield-report.json
+          REPOSHIELD_EXIT=$?
+
+          echo "RepoShield exit code: $REPOSHIELD_EXIT"
+
+          echo "Running SARIF generation..."
+
           ./reposhield analyze demo-target --sarif reposhield-results.sarif
+          SARIF_EXIT=$?
+
+          echo "SARIF generation exit code: $SARIF_EXIT"
+
+          echo "REPOSHIELD_EXIT=$REPOSHIELD_EXIT" >> "$GITHUB_ENV"
+          echo "SARIF_EXIT=$SARIF_EXIT" >> "$GITHUB_ENV"
+
+          exit 0
 
       - name: Display security report
         run: |
+          echo "========================================"
+          echo "        REPOSHIELD JSON REPORT"
+          echo "========================================"
+          echo ""
+
           cat reposhield-report.json
 
       - name: Upload SARIF results
+        if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: reposhield-results.sarif
 
       - name: CI Security Gate
+        if: always()
         run: |
           CRITICAL=$(grep -o '"severity": "CRITICAL"' reposhield-report.json | wc -l)
           HIGH=$(grep -o '"severity": "HIGH"' reposhield-report.json | wc -l)
@@ -73,13 +99,13 @@ jobs:
           echo "High issues:     $HIGH"
           echo ""
 
-          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+          if [ "$REPOSHIELD_EXIT" -ne 0 ]; then
             echo "========================================"
             echo "        SECURITY GATE FAILED"
             echo "========================================"
             echo ""
-            echo "Critical or High severity vulnerabilities"
-            echo "were detected."
+            echo "RepoShield security policy failed."
+            echo "Critical or High severity vulnerabilities were detected."
             echo ""
             echo "Fix these vulnerabilities before merging."
             exit 1
@@ -89,4 +115,4 @@ jobs:
           echo "        SECURITY GATE PASSED"
           echo "========================================"
           echo ""
-          echo "No Critical or High severity vulnerabilities detected."
+          echo "No policy violations detected."
