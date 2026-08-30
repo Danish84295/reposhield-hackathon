@@ -49,28 +49,32 @@ jobs:
           cat reposhield-report.json
 
       - name: CI Security Gate
-        shell: bash
         run: |
-          echo "Checking RepoShield security results..."
-
           CRITICAL=$(grep -o '"severity": "CRITICAL"' reposhield-report.json | wc -l)
           HIGH=$(grep -o '"severity": "HIGH"' reposhield-report.json | wc -l)
 
+          echo "========================================"
+          echo "          REPOSHIELD SECURITY GATE"
+          echo "========================================"
+          echo ""
           echo "Critical issues: $CRITICAL"
           echo "High issues:     $HIGH"
+          echo ""
 
           if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
-            echo ""
             echo "========================================"
             echo "        SECURITY GATE FAILED"
             echo "========================================"
             echo ""
-            echo "RepoShield detected Critical or High severity vulnerabilities."
-            echo "Fix these issues before merging."
+            echo "Critical or High severity vulnerabilities"
+            echo "were detected."
+            echo ""
+            echo "Fix these vulnerabilities before merging."
             exit 1
           fi
 
-          echo ""
           echo "========================================"
           echo "        SECURITY GATE PASSED"
           echo "========================================"
+          echo ""
+          echo "No Critical or High severity vulnerabilities detected."
