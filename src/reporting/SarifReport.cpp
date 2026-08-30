@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <set>
 
 std::string SarifReportGenerator::escapeJson(
     const std::string& value
@@ -97,14 +98,30 @@ bool SarifReportGenerator::write(
 
     output << "          \"version\": \"1.0.0\",\n";
 
+    // ------------------------------------------------------------
+    // SARIF rules
+    //
+    // SARIF requires every rule ID to appear only once.
+    // ------------------------------------------------------------
+
     output << "          \"rules\": [\n";
 
-    for (std::size_t i = 0;
-         i < securityIssues.size();
-         ++i) {
+    std::set<std::string> writtenRules;
+    bool firstRule = true;
 
-        const SecurityIssue& issue =
-            securityIssues[i];
+    for (const SecurityIssue& issue : securityIssues) {
+
+        if (writtenRules.find(issue.ruleId) != writtenRules.end()) {
+            continue;
+        }
+
+        writtenRules.insert(issue.ruleId);
+
+        if (!firstRule) {
+            output << ",\n";
+        }
+
+        firstRule = false;
 
         output << "            {\n";
 
@@ -133,15 +150,11 @@ bool SarifReportGenerator::write(
         output << "              }\n";
 
         output << "            }";
-
-        if (i + 1 < securityIssues.size()) {
-            output << ",";
-        }
-
-        output << "\n";
     }
 
+    output << "\n";
     output << "          ]\n";
+
     output << "        }\n";
     output << "      },\n";
 
