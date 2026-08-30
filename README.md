@@ -242,6 +242,10 @@ When analyzing a Git repository, RepoShield can report:
 - Commit count
 - Latest commit hash
 - Latest commit message
+It is done by 
+```
+./reposhield git ./my-project
+```
 
 Example:
 ```
@@ -418,30 +422,164 @@ After building:
 ./reposhield
 ```
 
-
 ## Usage
 
+### Help
+
+RepoShield provides global and command-specific help.
+
+#### Global Help
+
+```bash
+./reposhield --help
+```
+or
+```
+./reposhield -h
+```
+Output:
+```
+RepoShield - Zero-Dependency Repository Intelligence
+
+Usage:
+  reposhield <command> <path> [options]
+
+Commands:
+  analyze    Analyze repository security, health, and dependencies
+  fix        Apply supported automatic remediation
+  git        Show Git repository intelligence
+
+General options:
+  --help, -h           Show help information
+
+Exit codes:
+  0                    Success
+  1                    Error or security policy violation
+
+Run 'reposhield <command> --help' for command-specific help.
+```
+
+### Analyze Help
+```
+./reposhield analyze --help
+```
+Output:
+```
+RepoShield - Analyze
+
+Usage:
+  reposhield analyze <path> [options]
+
+Description:
+  Analyze repository structure, security, dependencies,
+  risk, Git information, and repository health.
+
+Options:
+  --json <file>       Generate a JSON report
+  --sarif <file>      Generate a SARIF report
+  --help, -h          Show this help message
+```
+
+### Fix Help
+```
+./reposhield fix --help
+```
+Output:
+```
+RepoShield - Fix
+
+Usage:
+  reposhield fix <path> [options]
+
+Description:
+  Apply supported automatic security remediation.
+
+Options:
+  --dry-run           Preview changes without modifying files
+  --help, -h          Show this help message
+```
+
+### Git Help
+```
+./reposhield git --help
+```
+Output:
+```
+RepoShield - Git
+
+Usage:
+  reposhield git <path>
+
+Description:
+  Display Git repository intelligence.
+
+Options:
+  --help, -h          Show this help message
+```
+
 ### Analyze a Repository
+Analyze a local repository:
 ```
 ./reposhield analyze ./my-project
 ```
 
 ###  Generate JSON
+Generate a machine-readable JSON report:
 ```
 ./reposhield analyze ./my-project --json report.json
 ```
 
 ###  Generate SARIF
+Generate a SARIF security report:
 ```
 ./reposhield analyze ./my-project --sarif report.sarif
 ```
 
 ###  Generate JSON and SARIF
+Generate both report formats:
 ```
 ./reposhield analyze ./my-project \
     --json report.json \
     --sarif report.sarif
 ```
+## Exit Codes
+
+RepoShield uses meaningful exit codes so it can be used in developer workflows and CI environments.
+
+| Exit Code | Meaning |
+| --------- | ------- |
+| `0` | Analysis completed successfully and no configured security policy was violated |
+| `1` | Analysis failed, an invalid configuration was detected, or the security policy was violated |
+
+For example:
+
+```bash
+./reposhield analyze demo-target
+echo $?
+```
+If the repository violates the configured security policy, RepoShield exits with:
+```
+1
+```
+This allows scripts and CI systems to detect security policy failures automatically.
+
+### CI Security Gate
+
+RepoShield can act as a security gate in automated workflows:
+
+```
+Repository
+    ↓
+RepoShield analyze
+    ↓
+Security Analysis
+    ↓
+Policy Evaluation
+    ↓
+PASS → Exit Code 0
+FAIL → Exit Code 1
+```
+This means a security policy violation can cause an automated workflow to fail without requiring a separate security-scanning dependency.
 
 ## Arbitrary Repository Analysis
 
