@@ -53,20 +53,15 @@ jobs:
 
           set +e
 
-          ./reposhield analyze demo-target --json reposhield-report.json
+          ./reposhield analyze demo-target \
+          --json reposhield-report.json \
+          --sarif reposhield-results.sarif
+
           REPOSHIELD_EXIT=$?
 
           echo "RepoShield exit code: $REPOSHIELD_EXIT"
 
-          echo "Running SARIF generation..."
-
-          ./reposhield analyze demo-target --sarif reposhield-results.sarif
-          SARIF_EXIT=$?
-
-          echo "SARIF generation exit code: $SARIF_EXIT"
-
           echo "REPOSHIELD_EXIT=$REPOSHIELD_EXIT" >> "$GITHUB_ENV"
-          echo "SARIF_EXIT=$SARIF_EXIT" >> "$GITHUB_ENV"
 
           exit 0
 

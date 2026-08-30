@@ -27,6 +27,7 @@ void printUsage()
         << "  reposhield analyze <path>\n"
         << "  reposhield analyze <path> --json <output.json>\n"
         << "  reposhield analyze <path> --sarif <output.sarif>\n"
+        << "  reposhield analyze <path> --json <output.json> --sarif <output.sarif>\n"
         << "  reposhield fix <path>\n"
         << "  reposhield fix <path> --dry-run\n"
         << "  reposhield git <path>\n";
@@ -335,24 +336,32 @@ if (command == "git") {
     }
 
 
-    // ------------------------------------------------------------
-    // Command options
-    // ------------------------------------------------------------
+// ------------------------------------------------------------
+// Command options
+// ------------------------------------------------------------
 
-    bool exportJson = false;
-    bool exportSarif = false;
-    bool dryRun = false;
+bool exportJson = false;
+bool exportSarif = false;
+bool dryRun = false;
 
-    fs::path jsonOutputPath;
-    fs::path sarifOutputPath;
+fs::path jsonOutputPath;
+fs::path sarifOutputPath;
 
-    if (argc >= 4) {
+if (argc >= 4) {
 
-        const std::string option = argv[3];
+    int i = 3;
+
+    while (i < argc) {
+
+        const std::string option = argv[i];
+
+        // --------------------------------------------------------
+        // JSON export
+        // --------------------------------------------------------
 
         if (command == "analyze" && option == "--json") {
 
-            if (argc < 5) {
+            if (i + 1 >= argc) {
 
                 std::cerr
                     << "Error: JSON output path is required.\n\n";
@@ -362,62 +371,47 @@ if (command == "git") {
             }
 
             exportJson = true;
-            jsonOutputPath = argv[4];
+            jsonOutputPath = argv[i + 1];
 
-            // Prevent accidental extra arguments.
-            if (argc > 5) {
+            i += 2;
+        }
+
+        // --------------------------------------------------------
+        // SARIF export
+        // --------------------------------------------------------
+
+        else if (command == "analyze" && option == "--sarif") {
+
+            if (i + 1 >= argc) {
 
                 std::cerr
-                    << "Error: unexpected argument '"
-                    << argv[5]
-                    << "'\n\n";
+                    << "Error: SARIF output path is required.\n\n";
 
                 printUsage();
                 return 1;
             }
+
+            exportSarif = true;
+            sarifOutputPath = argv[i + 1];
+
+            i += 2;
         }
-        else if (command == "analyze" && option == "--sarif") {
 
-    if (argc < 5) {
+        // --------------------------------------------------------
+        // Dry run
+        // --------------------------------------------------------
 
-        std::cerr
-            << "Error: SARIF output path is required.\n\n";
-
-        printUsage();
-        return 1;
-    }
-
-    exportSarif = true;
-    sarifOutputPath = argv[4];
-
-    // Prevent accidental extra arguments.
-    if (argc > 5) {
-
-        std::cerr
-            << "Error: unexpected argument '"
-            << argv[5]
-            << "'\n\n";
-
-        printUsage();
-        return 1;
-    }
-}
         else if (command == "fix" && option == "--dry-run") {
 
             dryRun = true;
 
-            // Prevent accidental extra arguments.
-            if (argc > 4) {
-
-                std::cerr
-                    << "Error: unexpected argument '"
-                    << argv[4]
-                    << "'\n\n";
-
-                printUsage();
-                return 1;
-            }
+            ++i;
         }
+
+        // --------------------------------------------------------
+        // Unknown option
+        // --------------------------------------------------------
+
         else {
 
             std::cerr
@@ -431,6 +425,7 @@ if (command == "git") {
             return 1;
         }
     }
+}
 
     // ------------------------------------------------------------
     // Repository scanning

@@ -16,3 +16,8 @@ node_modules/clean-target/
 
 # Dependencies
 node_modules/
+test.json
+test.sarif
+
+echo test.json >> .gitignore
+echo test.sarif >> .gitignore
