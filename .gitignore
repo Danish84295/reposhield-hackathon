@@ -13,3 +13,6 @@ build/
 dist/
 generated/
 node_modules/clean-target/
+
+# Dependencies
+node_modules/

@@ -1,0 +1,4 @@
+security:
+  fail_on:
+    - CRITICAL
+    - HIGH

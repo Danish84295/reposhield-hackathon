@@ -15,6 +15,7 @@
 #include "reporting/JsonReport.h"
 #include "reporting/SarifReport.h"
 #include "git/GitAnalyzer.h"
+#include "config/Config.h"
 
 namespace fs = std::filesystem;
 
@@ -284,6 +285,28 @@ int main(int argc, char* argv[])
 
         return 1;
     }
+
+    // ------------------------------------------------------------
+    // Security policy
+    // ------------------------------------------------------------
+
+    SecurityConfig securityConfig;
+
+    const bool policyLoaded =
+        securityConfig.load(repositoryPath);
+
+    if (!policyLoaded) {
+
+        std::cerr
+            << "Error: invalid RepoShield security policy: "
+            << securityConfig.getPolicyPath()
+            << "\n";
+
+        return 1;
+    }
+
+
+
     // ------------------------------------------------------------
 // GIT COMMAND
 // ------------------------------------------------------------
@@ -425,6 +448,14 @@ if (command == "git") {
 
     const std::vector<SecurityIssue> securityIssues =
         securityAnalyzer.analyze(files);
+
+
+    // ------------------------------------------------------------
+    // Security policy
+    // ------------------------------------------------------------
+
+    const bool policyFailed =
+        securityConfig.shouldFail(securityIssues);
 
     // ------------------------------------------------------------
     // FIX COMMAND
@@ -844,6 +875,25 @@ if (exportSarif) {
         << sarifOutputPath.string()
         << "\n\n";
 }
+
+
+    // ------------------------------------------------------------
+// Security policy enforcement
+// ------------------------------------------------------------
+
+if (policyFailed) {
+
+    std::cout
+        << "----------------------------------------\n"
+        << "        SECURITY POLICY FAILED\n"
+        << "----------------------------------------\n\n"
+        << "One or more findings match the configured "
+        << "fail_on policy.\n\n";
+
+    return 1;
+}
+
+return 0;
 
     return 0;
 }
