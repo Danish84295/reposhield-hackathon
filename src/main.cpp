@@ -737,6 +737,17 @@ if (command == "git") {
         securityIssues
     );
 
+
+    // ------------------------------------------------------------
+    // Git Intelligence
+    // ------------------------------------------------------------
+
+    GitAnalyzer gitAnalyzer;
+
+    const GitStatus gitStatus =
+        gitAnalyzer.analyze(repositoryPath);
+
+
     // ------------------------------------------------------------
     // JSON export
     // ------------------------------------------------------------
@@ -754,7 +765,8 @@ if (command == "git") {
                 securityIssues,
                 dependencies,
                 riskSummary,
-                remediations
+                remediations,
+                gitStatus
             );
 
         if (!success) {

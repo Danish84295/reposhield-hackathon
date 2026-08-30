@@ -71,7 +71,8 @@ bool JsonReportGenerator::write(
     const std::vector<SecurityIssue>& securityIssues,
     const std::vector<DependencyInfo>& dependencies,
     const RiskSummary& riskSummary,
-    const std::vector<Remediation>& remediations
+    const std::vector<Remediation>& remediations,
+    const GitStatus& gitStatus
 ) const
 {
     std::ofstream output(outputPath);
@@ -300,6 +301,54 @@ bool JsonReportGenerator::write(
     }
 
     output << "  ]\n";
+
+        // ------------------------------------------------------------
+    // Git Intelligence
+    // ------------------------------------------------------------
+
+    output << "  \"git\": {\n";
+
+    output << "    \"isRepository\": "
+           << (gitStatus.isRepository ? "true" : "false")
+           << ",\n";
+
+    output << "    \"branch\": \""
+           << escapeJson(gitStatus.branch)
+           << "\",\n";
+
+    output << "    \"clean\": "
+           << (gitStatus.clean ? "true" : "false")
+           << ",\n";
+
+    output << "    \"trackedFiles\": "
+           << gitStatus.trackedFiles
+           << ",\n";
+
+    output << "    \"modifiedFiles\": "
+           << gitStatus.modifiedFiles
+           << ",\n";
+
+    output << "    \"stagedFiles\": "
+           << gitStatus.stagedFiles
+           << ",\n";
+
+    output << "    \"untrackedFiles\": "
+           << gitStatus.untrackedFiles
+           << ",\n";
+
+    output << "    \"commitCount\": "
+           << gitStatus.commitCount
+           << ",\n";
+
+    output << "    \"latestCommitHash\": \""
+           << escapeJson(gitStatus.latestCommitHash)
+           << "\",\n";
+
+    output << "    \"latestCommitMessage\": \""
+           << escapeJson(gitStatus.latestCommitMessage)
+           << "\"\n";
+
+    output << "  }\n";
 
     output << "}\n";
 

@@ -6,6 +6,7 @@
 #include "../risk/RiskScorer.h"
 #include "../supplychain/DependencyAnalyzer.h"
 #include "../remediation/RemediationEngine.h"
+#include "../git/GitAnalyzer.h"
 
 #include <filesystem>
 #include <string>
@@ -21,7 +22,8 @@ public:
         const std::vector<SecurityIssue>& securityIssues,
         const std::vector<DependencyInfo>& dependencies,
         const RiskSummary& riskSummary,
-        const std::vector<Remediation>& remediations
+        const std::vector<Remediation>& remediations,
+        const GitStatus& gitStatus
     ) const;
 
 private:
