@@ -42,21 +42,19 @@ jobs:
 
       - name: Run RepoShield
         run: |
-          ./reposhield analyze . --json reposhield-report.json
+          ./reposhield analyze demo-target --json reposhield-report.json
 
       - name: Display security report
         run: |
           cat reposhield-report.json
 
       - name: CI Security Gate
+        shell: bash
         run: |
           echo "Checking RepoShield security results..."
 
-          CRITICAL=$(grep -o '"critical":[[:space:]]*[0-9]*' reposhield-report.json | grep -o '[0-9]*' | head -1)
-          HIGH=$(grep -o '"high":[[:space:]]*[0-9]*' reposhield-report.json | grep -o '[0-9]*' | head -1)
-
-          CRITICAL=${CRITICAL:-0}
-          HIGH=${HIGH:-0}
+          CRITICAL=$(grep -o '"severity": "CRITICAL"' reposhield-report.json | wc -l)
+          HIGH=$(grep -o '"severity": "HIGH"' reposhield-report.json | wc -l)
 
           echo "Critical issues: $CRITICAL"
           echo "High issues:     $HIGH"
@@ -76,5 +74,3 @@ jobs:
           echo "========================================"
           echo "        SECURITY GATE PASSED"
           echo "========================================"
-          echo ""
-          echo "No Critical or High severity vulnerabilities found."
