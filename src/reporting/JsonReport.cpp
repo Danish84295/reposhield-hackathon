@@ -283,6 +283,14 @@ bool JsonReportGenerator::write(
                   )
                << "\",\n";
 
+        output << "      \"risk\": \""
+               << escapeJson(dependency.risk)
+               << "\",\n";
+
+        output << "      \"riskReason\": \""
+               << escapeJson(dependency.riskReason)
+               << "\",\n";
+
         output << "      \"file\": \""
                << escapeJson(dependency.file.string())
                << "\",\n";
@@ -300,9 +308,9 @@ bool JsonReportGenerator::write(
         output << "\n";
     }
 
-    output << "  ]\n";
+    output << "  ],\n";
 
-        // ------------------------------------------------------------
+    // ------------------------------------------------------------
     // Git Intelligence
     // ------------------------------------------------------------
 

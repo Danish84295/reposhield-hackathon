@@ -25,23 +25,27 @@ Developers often need multiple tools to understand the health and security of a 
 RepoShield brings several useful checks into a single CLI command.
 
 
-Repository
-     |
-     v
- RepoShield
-     |
-     +-----------------------------+
-     |                             |
-     v                             v
-Repository Statistics          Code Lens
-Security Analysis             Dependency Analysis
-Risk Scoring                  Git Intelligence
-Remediation Guidance          Security Policy
-     |                             |
-     +-------------+---------------+
-                   |
-                   v
-          Terminal / JSON / SARIF
+
+flowchart TD
+    R[Repository] --> RS[RepoShield]
+
+    RS --> ST[Repository Statistics]
+    RS --> CL[Code Lens]
+    RS --> SA[Security Analysis]
+    RS --> DA[Dependency Analysis]
+    RS --> RR[Risk Scoring]
+    RS --> GI[Git Intelligence]
+    RS --> RG[Remediation Guidance]
+    RS --> SP[Security Policy]
+
+    ST --> O[Terminal / JSON / SARIF]
+    CL --> O
+    SA --> O
+    DA --> O
+    RR --> O
+    GI --> O
+    RG --> O
+    SP --> O
 
 ## Features
 

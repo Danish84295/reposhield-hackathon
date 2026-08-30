@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
+#include <openssl/sha.h>
 
 struct UserInfo {
     int id;

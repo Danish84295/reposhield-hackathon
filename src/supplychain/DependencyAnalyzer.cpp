@@ -1,7 +1,9 @@
 #include "DependencyAnalyzer.h"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 std::vector<DependencyInfo> DependencyAnalyzer::analyze(
     const std::vector<FileInfo>& files
@@ -41,7 +43,9 @@ void DependencyAnalyzer::analyzeFile(
                 type,
                 dependency,
                 file.path,
-                lineNumber
+                lineNumber,
+                riskToString(type),
+                riskReason(type)
             });
         }
     }
@@ -72,8 +76,13 @@ bool DependencyAnalyzer::parseInclude(
         return false;
     }
 
-    // Local project dependency:
+    // ------------------------------------------------------------
+    // Local project dependency
+    //
+    // Example:
     // #include "parser.h"
+    // ------------------------------------------------------------
+
     if (target.front() == '"' &&
         target.back() == '"') {
 
@@ -85,26 +94,219 @@ bool DependencyAnalyzer::parseInclude(
         return !dependency.empty();
     }
 
-    // Header supplied through system/compiler include paths:
+    // ------------------------------------------------------------
+    // System / external dependency
+    //
+    // Examples:
     // #include <iostream>
+    // #include <openssl/ssl.h>
+    // #include <curl/curl.h>
+    // ------------------------------------------------------------
+
     if (target.front() == '<' &&
         target.back() == '>') {
 
         dependency =
             target.substr(1, target.size() - 2);
 
-        /*
-         * For this first version, standard C/C++ headers
-         * are classified as Standard. Later we can maintain
-         * a known external-package database.
-         */
-        type = DependencyType::Standard;
+        if (dependency.empty()) {
+            return false;
+        }
 
-        return !dependency.empty();
+        if (isStandardHeader(dependency)) {
+            type = DependencyType::Standard;
+        }
+        else {
+            type = DependencyType::External;
+        }
+
+        return true;
     }
 
     return false;
 }
+
+// ------------------------------------------------------------
+// Standard C/C++ header detection
+// ------------------------------------------------------------
+
+bool DependencyAnalyzer::isStandardHeader(
+    const std::string& dependency
+)
+{
+    static const std::vector<std::string> standardHeaders = {
+
+        "algorithm",
+        "array",
+        "atomic",
+        "bitset",
+        "cassert",
+        "cctype",
+        "cerrno",
+        "cfenv",
+        "cfloat",
+        "charconv",
+        "chrono",
+        "cinttypes",
+        "ciso646",
+        "climits",
+        "clocale",
+        "cmath",
+        "codecvt",
+        "compare",
+        "complex",
+        "concepts",
+        "condition_variable",
+        "coroutine",
+        "csetjmp",
+        "csignal",
+        "cstdarg",
+        "cstddef",
+        "cstdint",
+        "cstdio",
+        "cstdlib",
+        "cstring",
+        "ctgmath",
+        "ctime",
+        "cuchar",
+        "cwchar",
+        "cwctype",
+
+        "deque",
+        "exception",
+        "execution",
+
+        "filesystem",
+        "forward_list",
+        "fstream",
+        "functional",
+        "future",
+
+        "initializer_list",
+        "iomanip",
+        "ios",
+        "iosfwd",
+        "iostream",
+        "istream",
+        "iterator",
+
+        "latch",
+        "limits",
+        "list",
+        "locale",
+
+        "map",
+        "memory",
+        "memory_resource",
+        "mutex",
+
+        "new",
+        "numbers",
+        "numeric",
+
+        "optional",
+        "ostream",
+
+        "queue",
+
+        "random",
+        "ranges",
+        "ratio",
+        "regex",
+        "scoped_allocator",
+
+        "semaphore",
+        "set",
+        "shared_mutex",
+        "source_location",
+        "span",
+        "sstream",
+        "stack",
+        "stdexcept",
+        "streambuf",
+        "string",
+        "string_view",
+        "syncstream",
+
+        "system_error",
+
+        "thread",
+        "tuple",
+        "type_traits",
+        "typeindex",
+        "typeinfo",
+
+        "unordered_map",
+        "unordered_set",
+        "utility",
+
+        "valarray",
+        "variant",
+        "vector",
+
+        "version"
+    };
+
+    return std::find(
+        standardHeaders.begin(),
+        standardHeaders.end(),
+        dependency
+    ) != standardHeaders.end();
+}
+
+// ------------------------------------------------------------
+// Dependency risk
+// ------------------------------------------------------------
+
+std::string DependencyAnalyzer::riskToString(
+    DependencyType type
+)
+{
+    switch (type) {
+
+        case DependencyType::Standard:
+            return "LOW";
+
+        case DependencyType::Local:
+            return "LOW";
+
+        case DependencyType::External:
+            return "MEDIUM";
+    }
+
+    return "UNKNOWN";
+}
+
+// ------------------------------------------------------------
+// Dependency risk explanation
+// ------------------------------------------------------------
+
+std::string DependencyAnalyzer::riskReason(
+    DependencyType type
+)
+{
+    switch (type) {
+
+        case DependencyType::Standard:
+            return
+                "Standard library dependency with low supply-chain risk.";
+
+        case DependencyType::Local:
+            return
+                "Local project dependency; risk depends on repository contents.";
+
+        case DependencyType::External:
+            return
+                "External dependency should be reviewed for version, "
+                "provenance, and known vulnerabilities.";
+    }
+
+    return "Unknown dependency risk.";
+}
+
+// ------------------------------------------------------------
+// Dependency type
+// ------------------------------------------------------------
 
 std::string DependencyAnalyzer::typeToString(
     DependencyType type
@@ -124,6 +326,10 @@ std::string DependencyAnalyzer::typeToString(
 
     return "UNKNOWN";
 }
+
+// ------------------------------------------------------------
+// Trim whitespace
+// ------------------------------------------------------------
 
 std::string DependencyAnalyzer::trim(
     const std::string& value

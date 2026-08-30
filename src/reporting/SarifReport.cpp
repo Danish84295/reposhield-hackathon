@@ -228,7 +228,7 @@ bool SarifReportGenerator::write(
     output << "      ]\n";
 
     output << "    }\n";
-    output << "  ]\n";
+    output << "  ],\n";
 
     output << "}\n";
 

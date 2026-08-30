@@ -17,6 +17,9 @@ struct DependencyInfo {
     std::string name;
     fs::path file;
     std::size_t line;
+
+    std::string risk;
+    std::string riskReason;
 };
 
 class DependencyAnalyzer {
@@ -26,6 +29,14 @@ public:
     ) const;
 
     static std::string typeToString(
+        DependencyType type
+    );
+
+    static std::string riskToString(
+        DependencyType type
+    );
+
+    static std::string riskReason(
         DependencyType type
     );
 
@@ -43,5 +54,9 @@ private:
 
     static std::string trim(
         const std::string& value
+    );
+
+    static bool isStandardHeader(
+        const std::string& dependency
     );
 };
