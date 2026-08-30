@@ -335,6 +335,15 @@ RepoShield is designed as a standalone C++17 executable.
 
 No third-party C++ libraries are required.
 
+### Clone the Repository
+
+Clone RepoShield from GitHub:
+
+```bash
+git clone https://github.com/Danish84295/reposhield-hackathon.git
+cd reposhield-hackathon
+```
+
 ## Build
 From the repository root:
 
@@ -680,8 +689,6 @@ Examples include:
 - std::map / standard containers for analysis data
 - std::fstream for report generation
 - Standard process/system interfaces for Git integration
-
-No third-party C++ libraries are required for the core implementation.
 
 See STDLIB.md for implementation details.
 
