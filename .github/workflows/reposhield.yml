@@ -42,6 +42,7 @@ jobs:
             src/reporting/JsonReport.cpp \
             src/reporting/SarifReport.cpp \
             src/git/GitAnalyzer.cpp \
+            src/config/Config.cpp \
             -I src \
             -o reposhield
 
