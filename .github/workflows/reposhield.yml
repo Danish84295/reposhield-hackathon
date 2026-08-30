@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   security-scan:
     name: RepoShield Analysis
@@ -36,17 +40,24 @@ jobs:
             src/remediation/RemediationEngine.cpp \
             src/reporting/HealthReport.cpp \
             src/reporting/JsonReport.cpp \
+            src/reporting/SarifReport.cpp \
             src/git/GitAnalyzer.cpp \
             -I src \
             -o reposhield
 
       - name: Run RepoShield
         run: |
-          ./reposhield analyze demo-target --json reposhield-report.json
+          ./reposhield analyze . --json reposhield-report.json
+          ./reposhield analyze . --sarif reposhield-results.sarif
 
       - name: Display security report
         run: |
           cat reposhield-report.json
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reposhield-results.sarif
 
       - name: CI Security Gate
         run: |

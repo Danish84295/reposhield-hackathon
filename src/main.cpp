@@ -13,6 +13,7 @@
 #include "reporting/HealthReport.h"
 #include "remediation/RemediationEngine.h"
 #include "reporting/JsonReport.h"
+#include "reporting/SarifReport.h"
 #include "git/GitAnalyzer.h"
 
 namespace fs = std::filesystem;
@@ -24,6 +25,7 @@ void printUsage()
         << "Usage:\n"
         << "  reposhield analyze <path>\n"
         << "  reposhield analyze <path> --json <output.json>\n"
+        << "  reposhield analyze <path> --sarif <output.sarif>\n"
         << "  reposhield fix <path>\n"
         << "  reposhield fix <path> --dry-run\n"
         << "  reposhield git <path>\n";
@@ -314,9 +316,11 @@ if (command == "git") {
     // ------------------------------------------------------------
 
     bool exportJson = false;
+    bool exportSarif = false;
     bool dryRun = false;
 
     fs::path jsonOutputPath;
+    fs::path sarifOutputPath;
 
     if (argc >= 4) {
 
@@ -348,6 +352,32 @@ if (command == "git") {
                 return 1;
             }
         }
+        else if (command == "analyze" && option == "--sarif") {
+
+    if (argc < 5) {
+
+        std::cerr
+            << "Error: SARIF output path is required.\n\n";
+
+        printUsage();
+        return 1;
+    }
+
+    exportSarif = true;
+    sarifOutputPath = argv[4];
+
+    // Prevent accidental extra arguments.
+    if (argc > 5) {
+
+        std::cerr
+            << "Error: unexpected argument '"
+            << argv[5]
+            << "'\n\n";
+
+        printUsage();
+        return 1;
+    }
+}
         else if (command == "fix" && option == "--dry-run") {
 
             dryRun = true;
@@ -784,6 +814,36 @@ if (command == "git") {
             << jsonOutputPath.string()
             << "\n\n";
     }
+
+// ------------------------------------------------------------
+// SARIF export
+// ------------------------------------------------------------
+
+if (exportSarif) {
+
+    SarifReportGenerator sarifReportGenerator;
+
+    const bool success =
+        sarifReportGenerator.write(
+            sarifOutputPath,
+            securityIssues
+        );
+
+    if (!success) {
+
+        std::cerr
+            << "Error: could not write SARIF report to "
+            << sarifOutputPath.string()
+            << "\n";
+
+        return 1;
+    }
+
+    std::cout
+        << "SARIF report written to: "
+        << sarifOutputPath.string()
+        << "\n\n";
+}
 
     return 0;
 }
