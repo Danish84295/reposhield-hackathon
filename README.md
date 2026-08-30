@@ -46,7 +46,7 @@ Remediation Guidance          Security Policy
 
 ## Features
 
-1. Repository Statistics
+### Repository Statistics
 
 RepoShield scans the repository and reports:
 
@@ -58,7 +58,7 @@ Total lines
 Detected programming languages
 
 Example:
-
+```
 Files:          14
 Source files:   14
 Header files:   0
@@ -68,24 +68,24 @@ Total lines:    344
 LANGUAGES
 
 JavaScript  14 files (100%), 344 lines
-
+```
 ---
 
-2. Code Lens
+### Code Lens
 
 Code Lens provides a lightweight structural view of the codebase.
 
 It detects:
 
-Include count
-Functions
-Classes
-Structs
-Function locations
-Function sizes
+- Include count
+- Functions
+- Classes
+- Structs
+- Function locations
+- Function sizes
 
 Example:
-
+```
 FUNCTIONS
 
   process
@@ -102,36 +102,40 @@ FUNCTIONS
     File: vulnerable.cpp
     Line: 28
     Lines: 5
-
+```
 ---
 
-3. Security Analysis
+### Security Analysis
 
 RepoShield detects common security-related source-code patterns.
 
 Current security rules:
 
-Rule	Finding	Severity
-RS001	Unsafe C string function	HIGH
-RS002	Command execution	HIGH
-RS003	Possible hardcoded secret	CRITICAL
-RS004	Weak cryptographic algorithm	HIGH
-RS005	Potentially dangerous file operation	MEDIUM
-RS006	Potential SQL injection	HIGH
-RS007	Insecure random number generation	MEDIUM
+```
+| Rule  | Finding                              | Severity |
+| ----- | ------------------------------------ | -------- |
+| RS001 | Unsafe C string function             | HIGH     |
+| RS002 | Command execution                    | HIGH     |
+| RS003 | Possible hardcoded secret            | CRITICAL |
+| RS004 | Weak cryptographic algorithm         | HIGH     |
+| RS005 | Potentially dangerous file operation | MEDIUM   |
+| RS006 | Potential SQL injection              | HIGH     |
+| RS007 | Insecure random number generation    | MEDIUM   |
+```
 
 Each security finding contains:
 
-Rule ID
-Title
-Severity
-File
-Line number
-Description
-Remediation recommendation
+- Rule ID
+- Title
+- Severity
+- File
+- Line number
+- Description
+- Remediation recommendation
 
 Example:
 
+```
 [RS003] Possible hardcoded secret
   Severity: CRITICAL
   File: vulnerable.cpp
@@ -139,24 +143,26 @@ Example:
 
   A credential-like value appears to be stored
   directly in source code.
+```
 
 ---
-4. Risk Scoring
+### Risk Scoring
 
 RepoShield calculates a repository risk score from:
 
 0 → 100
 
 and reports a corresponding risk level:
-
+```
 SAFE
 LOW
 MEDIUM
 HIGH
 CRITICAL
+```
 
 Example:
-
+```
 RISK SUMMARY
 
 Risk Level: CRITICAL
@@ -166,19 +172,21 @@ Critical: 1
 High:     4
 Medium:   2
 Low:      0
+```
 
 ---
-5. Supply Chain Analysis
+### Supply Chain Analysis
 
 RepoShield detects source-level dependencies from repository files.
 
 Dependencies are classified as:
 
-Standard library dependencies
-External dependencies
+- Standard library dependencies
+- External dependencies
 
 Example:
 
+```
 SUPPLY CHAIN
 
 Dependencies found: 6
@@ -189,23 +197,24 @@ Dependencies found: 6
 [STANDARD] cstdio
 [STANDARD] string
 [EXTERNAL] openssl/sha.h
+```
 
 Each dependency can contain:
 
-Name
-Type
-Risk
-Risk reason
-Source file
-Line number
+- Name
+- Type
+- Risk
+- Risk reason
+- Source file
+- Line number
 
 ---
-6. Dependency Graph
+### Dependency Graph
 
 RepoShield displays relationships between source files and detected dependencies.
 
 Example:
-
+```
 vulnerable.cpp
   +-- [STANDARD] cstring
   +-- [STANDARD] cstdlib
@@ -213,28 +222,29 @@ vulnerable.cpp
   +-- [STANDARD] cstdio
   +-- [STANDARD] string
   +-- [EXTERNAL] openssl/sha.h
+```
 
 This provides a simple way to understand the dependency structure of a repository.
 
 
 ---
-7. Git Intelligence
+### Git Intelligence
 
 When analyzing a Git repository, RepoShield can report:
 
-Repository status
-Current branch
-Clean / dirty state
-Tracked files
-Modified files
-Staged files
-Untracked files
-Commit count
-Latest commit hash
-Latest commit message
+- Repository status
+- Current branch
+- Clean / dirty state
+- Tracked files
+- Modified files
+- Staged files
+- Untracked files
+- Commit count
+- Latest commit hash
+- Latest commit message
 
 Example:
-
+```
 GIT
 
 Repository: Git repository
@@ -245,67 +255,71 @@ Modified files: 0
 Staged files: 0
 Untracked files: 0
 Commit count: 18
-
+```
 Git is optional. RepoShield can still analyze repositories that are not Git repositories.
 
 ---
-8. Remediation Guidance
+
+### Remediation Guidance
 
 Security findings include actionable recommendations.
 
 Example:
-
+```
 [RS001] Unsafe C string function
 
 Recommendation:
 Replace unsafe C string functions such as strcpy()
 with safer alternatives such as std::string or
 a bounds-checked operation.
-
+```
 The goal is not only to detect problems, but also to provide developers with guidance for addressing them.
 
 
 ---
-9. JSON Reports
+### JSON Reports
 
 RepoShield can generate a structured JSON report.
-
+```
 ./reposhield analyze ./my-project --json report.json
+```
 
 The JSON report contains information such as:
 
-Repository information
-Repository health
-Code statistics
-Security findings
-Risk score
-Dependencies
-Dependency risks
-Git information
-Remediation recommendations
+- Repository information
+- Repository health
+- Code statistics
+- Security findings
+- Risk score
+- Dependencies
+- Dependency risks
+- Git information
+- Remediation recommendations
 
 ---
-10. SARIF Reports
+### SARIF Reports
 
 RepoShield can generate a SARIF security report.
-
+```
 ./reposhield analyze ./my-project --sarif report.sarif
+```
 
 SARIF provides a standardized machine-readable format for security-analysis results and can be consumed by compatible development and security tooling.
 
 ---
-11. Security Policy Enforcement
+### Security Policy Enforcement
 
 RepoShield can fail an analysis when configured security findings match the configured policy.
 
 Example:
-
+```
 ----------------------------------------
         SECURITY POLICY FAILED
 ----------------------------------------
 
 One or more findings match the configured
 fail_on policy.
+```
 
 This allows RepoShield to be used as part of developer workflows and CI checks.
 
@@ -315,15 +329,16 @@ This allows RepoShield to be used as part of developer workflows and CI checks.
 RepoShield is designed as a standalone C++17 executable.
 
 ### Requirements
-C++17-compatible compiler
-Standard C++ library
-Git (optional, for Git intelligence)
+- C++17-compatible compiler
+- Standard C++ library
+- Git (optional, for Git intelligence)
 
 No third-party C++ libraries are required.
 
 ## Build
 From the repository root:
 
+```
 g++ -std=c++17 \
 src/main.cpp \
 src/core/FileScanner.cpp \
@@ -341,49 +356,57 @@ src/git/GitAnalyzer.cpp \
 src/config/Config.cpp \
 -I src \
 -o reposhield
+```
 
 
 After building:
-
+```
 ./reposhield
-
+```
 
 
 ## Usage
 
-1. Analyze a Repository
+### Analyze a Repository
+```
 ./reposhield analyze ./my-project
+```
 
-2.  Generate JSON
+###  Generate JSON
+```
 ./reposhield analyze ./my-project --json report.json
+```
 
-3.  Generate SARIF
+###  Generate SARIF
+```
 ./reposhield analyze ./my-project --sarif report.sarif
+```
 
-4.  Generate JSON and SARIF
+###  Generate JSON and SARIF
+```
 ./reposhield analyze ./my-project \
     --json report.json \
     --sarif report.sarif
-
+```
 
 ## Arbitrary Repository Analysis
 
 RepoShield is not tied to the included demo repository.
-
 It accepts arbitrary local repository paths.
 
+
 For example:
-
+```
 ./reposhield analyze ../research-paper-ai
-
+```
 or:
-
+```
 ./reposhield analyze ../wexaai-Assessment-smart-mess-tracker
-
+```
 This allows the same executable to analyze different projects without changing the source code.
 
 Example result:
-
+```
 Repository: ../research-paper-ai
 
 Source files: 14
@@ -400,12 +423,12 @@ No security issues detected.
 
 Risk Level: SAFE
 Risk Score: 0 / 100
-
+```
 
 ## Example: Vulnerable Repository
 
 For a repository containing intentionally vulnerable code:
-
+```
 ----------------------------------------
               SECURITY
 ----------------------------------------
@@ -446,9 +469,10 @@ Issues found: 7
   Severity: MEDIUM
   File: vulnerable.cpp
   Line: 55
+```
 
 Risk summary:
-
+```
 Risk Level: CRITICAL
 Risk Score: 100 / 100
 
@@ -456,35 +480,38 @@ Critical: 1
 High:     4
 Medium:   2
 Low:      0
-
+```
 
 ## Output Formats
 
 RepoShield provides three primary output forms.
 
-Terminal
+### Terminal
 
 Human-readable output designed for developers working directly from the command line.
 
-JSON
+### JSON
 
 Machine-readable repository analysis suitable for further processing.
 
-SARIF
+### SARIF
 
 Standardized security-analysis output for compatible security and development tooling.
 
+```
                     RepoShield
                         |
              +----------+----------+
              |          |          |
              v          v          v
           Terminal     JSON      SARIF
+```
 
 
 ## Architecture
 
 RepoShield follows a modular C++ architecture.
+```
 
                     +----------------+
                     |      CLI       |
@@ -532,10 +559,10 @@ RepoShield follows a modular C++ architecture.
          +---------+    +--------+    +--------+
          |Terminal |    |  JSON  |    | SARIF  |
          +---------+    +--------+    +--------+
-
+```
 
 ## Project Structure
-
+```
 reposhield/
 |
 ├── src/
@@ -558,43 +585,43 @@ reposhield/
 ├── README.md
 ├── STDLIB.md
 └── LICENSE
-
+```
 
 ## Design Principles
 
 RepoShield is designed around the requirements of the Developer Tools & CLI track.
 
-Standalone
+### Standalone
 
 RepoShield builds into a single runnable executable.
 
-CLI First
+### CLI First
 
 The primary interface is a clean command-line interface.
 
-Standard Library
+### Standard Library
 
 Core repository analysis is implemented using the C++17 standard library.
 
-Developer Focused
+### Developer Focused
 
 Output is designed to be useful directly from a developer terminal.
 
-Machine Readable
+### Machine Readable
 
 JSON and SARIF outputs allow analysis results to be consumed by other tools.
 
-Meaningful Exit Status
+### Meaningful Exit Status
 
 Security policy failures can produce a failed analysis status, making RepoShield suitable for automated workflows.
 
-Modular Architecture
+### Modular Architecture
 
 Analysis responsibilities are separated into focused components.
 
 
 ## Demo Flow
-
+```
 1. Build RepoShield
         |
         v
@@ -621,6 +648,8 @@ Analysis responsibilities are separated into focused components.
         v
 9. Show that RepoShield works with
    arbitrary local repository paths
+```
+This demonstrates both the security-analysis capabilities and the general-purpose CLI workflow.
 
 
 ## Limitations
@@ -632,10 +661,11 @@ It does not directly download remote repositories.
 For a remote repository, clone it first and then provide its local path to RepoShield
 
 Example:
-
+```
 git clone <repository-url>
 
 ./reposhield analyze ./repository
+```
 
 ## Standard Library Compliance
 
@@ -644,18 +674,16 @@ No third-party C++ libraries are required for repository scanning, code analysis
 
 Examples include:
 
-std::filesystem for repository traversal
-std::string for text processing
-std::vector for collections
-std::map / standard containers for analysis data
-std::fstream for report generation
-Standard process/system interfaces for Git integration
+- std::filesystem for repository traversal
+- std::string for text processing
+- std::vector for collections
+- std::map / standard containers for analysis data
+- std::fstream for report generation
+- Standard process/system interfaces for Git integration
 
 No third-party C++ libraries are required for the core implementation.
 
 See STDLIB.md for implementation details.
-
-
 
 ## License
 
