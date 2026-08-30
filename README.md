@@ -735,7 +735,9 @@ Examples include:
 - std::fstream for report generation
 - Standard process/system interfaces for Git integration
 
-See STDLIB.md for implementation details.
+For detailed information about the standard-library implementation and Track A compliance, see:
+
+**[STDLIB.md](STDLIB.md)**
 
 ## License
 
