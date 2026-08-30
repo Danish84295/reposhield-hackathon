@@ -12,4 +12,4 @@ test-project/
 build/
 dist/
 generated/
-node_modules/
+node_modules/clean-target/
