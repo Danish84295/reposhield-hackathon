@@ -24,27 +24,79 @@ void printUsage()
     std::cout
         << "RepoShield - Zero-Dependency Repository Intelligence\n\n"
         << "Usage:\n"
-        << "  reposhield analyze <path> [options]\n"
-        << "  reposhield fix <path> [options]\n"
-        << "  reposhield git <path>\n\n"
+        << "  reposhield <command> <path> [options]\n\n"
         << "Commands:\n"
         << "  analyze    Analyze repository security, health, and dependencies\n"
         << "  fix        Apply supported automatic remediation\n"
         << "  git        Show Git repository intelligence\n\n"
-        << "Analyze options:\n"
-        << "  --json <file>       Generate a JSON report\n"
-        << "  --sarif <file>      Generate a SARIF report\n\n"
-        << "Fix options:\n"
-        << "  --dry-run            Preview remediation without modifying files\n\n"
         << "General options:\n"
-        << "  --help               Show this help message\n\n"
+        << "  --help, -h           Show help information\n\n"
+        << "Exit codes:\n"
+        << "  0                    Success\n"
+        << "  1                    Error or security policy violation\n\n"
+        << "Run 'reposhield <command> --help' for command-specific help.\n\n"
+        << "Examples:\n"
+        << "  reposhield analyze ./my-project\n"
+        << "  reposhield fix ./demo-target\n"
+        << "  reposhield git ./my-project\n";
+}
+
+void printAnalyzeUsage()
+{
+    std::cout
+        << "RepoShield - Analyze\n\n"
+        << "Usage:\n"
+        << "  reposhield analyze <path> [options]\n\n"
+        << "Description:\n"
+        << "  Analyze repository structure, security, dependencies,\n"
+        << "  risk, Git information, and repository health.\n\n"
+        << "Options:\n"
+        << "  --json <file>       Generate a JSON report\n"
+        << "  --sarif <file>      Generate a SARIF report\n"
+        << "  --help, -h          Show this help message\n\n"
         << "Examples:\n"
         << "  reposhield analyze ./my-project\n"
         << "  reposhield analyze ./my-project --json report.json\n"
         << "  reposhield analyze ./my-project --sarif report.sarif\n"
+        << "  reposhield analyze ./my-project --json report.json --sarif report.sarif\n";
+}
+
+void printFixUsage()
+{
+    std::cout
+        << "RepoShield - Fix\n\n"
+        << "Usage:\n"
+        << "  reposhield fix <path> [options]\n\n"
+        << "Description:\n"
+        << "  Apply supported automatic security remediation.\n\n"
+        << "Options:\n"
+        << "  --dry-run           Preview changes without modifying files\n"
+        << "  --help, -h          Show this help message\n\n"
+        << "Examples:\n"
         << "  reposhield fix ./demo-target\n"
-        << "  reposhield fix ./demo-target --dry-run\n"
-        << "  reposhield git ./my-project\n";
+        << "  reposhield fix ./demo-target --dry-run\n";
+}
+
+void printGitUsage()
+{
+    std::cout
+        << "RepoShield - Git\n\n"
+        << "Usage:\n"
+        << "  reposhield git <path>\n\n"
+        << "Description:\n"
+        << "  Display Git repository intelligence.\n\n"
+        << "Reports:\n"
+        << "  Current branch\n"
+        << "  Repository status\n"
+        << "  Clean / dirty state\n"
+        << "  Tracked files\n"
+        << "  Modified files\n"
+        << "  Staged files\n"
+        << "  Untracked files\n"
+        << "  Commit count\n"
+        << "  Latest commit information\n\n"
+        << "Options:\n"
+        << "  --help, -h          Show this help message\n";
 }
 
 void printSecurityReport(
@@ -286,11 +338,22 @@ int main(int argc, char* argv[])
     }
 
     // Command-specific help
-    if (std::string(argv[2]) == "--help" ||
-        std::string(argv[2]) == "-h") {
-        printUsage();
-        return 0;
+if (std::string(argv[2]) == "--help" ||
+    std::string(argv[2]) == "-h") {
+
+    if (command == "analyze") {
+        printAnalyzeUsage();
     }
+    else if (command == "fix") {
+        printFixUsage();
+    }
+    else if (command == "git") {
+        printGitUsage();
+    }
+
+    return 0;
+}
+
 
     const fs::path repositoryPath = argv[2];
 
@@ -902,8 +965,8 @@ if (exportSarif) {
 
 
     // ------------------------------------------------------------
-// Security policy enforcement
-// ------------------------------------------------------------
+    // Security policy enforcement
+    // ------------------------------------------------------------
 
 if (policyFailed) {
 
