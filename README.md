@@ -18,6 +18,11 @@ RepoShield analyzes a local software repository and produces a developer-focused
 
 Built using the **C++17 standard library only**.
 
+## 🎥 Demo
+
+[▶️ Watch the 5-Minute Demo on YouTube](https://www.youtube.com/watch?v=Y0PwYIm7sYM)
+---
+
 
 ## Why RepoShield?
 Developers often need multiple tools to understand the health and security of a repository.
